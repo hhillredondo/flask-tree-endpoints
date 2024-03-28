@@ -37,7 +37,7 @@ def member(member_id):
         return delete_member_query(g, member_id)
     
 @app.route('/members', methods=['GET'])
-def create_member():
+def get_members():
     return get_all_members_query(g)
 
 # RELATIONS
