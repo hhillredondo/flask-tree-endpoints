@@ -1,5 +1,7 @@
 from flask import jsonify, request
 from utils import normalize_data
+import validation.dataTypes as vdt
+import validation.businessLogic as vbl
 
 
 def create_member_query(g):
@@ -34,8 +36,55 @@ def create_member_query(g):
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
-        # Data type validation with Marshmallow (eg. max char lengths, alphabetical chars only for names, proper date formats, etc.)
-        # Business logic constraints validation (eg. date of death must be after date of birth)
+        # Validate name field
+        valid, error_msg = vdt.validate_name_fields("name", name)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate surname field
+        valid, error_msg = vdt.validate_name_fields("surname", surname)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate gender field
+        valid, error_msg = vdt.validate_gender(gender)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate description field
+        valid, error_msg = vdt.validate_description(description)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate born field
+        valid, error_msg = vdt.validate_date_format(gender)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate died field
+        valid, error_msg = vdt.validate_date_format(gender)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate dates make sense
+        valid, error_msg = vbl.validate_date_order(born, died)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate pic field
+        valid, error_msg = vdt.validate_url("pic", pic)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate photos field
+        valid, error_msg = vdt.validate_url("photos", photos)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
+
+        # Validate root field
+        valid, error_msg = vdt.validate_boolean("root", root)
+        if not valid:
+            return jsonify({"error": error_msg}), 400
 
         new_member = (
             g.addV("_Member")
