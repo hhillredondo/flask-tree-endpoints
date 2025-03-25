@@ -21,7 +21,6 @@ def create_member_query(g):
         photos = data.get("photos")
         root = data.get("root")
 
-        # Input validation
         required_fields = [
             "name",
             "surname",
@@ -36,53 +35,21 @@ def create_member_query(g):
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
-        # Validate name field
-        valid, error_msg = vdt.validate_name_fields("name", name)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
+        validations = [
+            (vdt.validate_name_fields, ("name", name)),
+            (vdt.validate_name_fields, ("surname", surname)),
+            (vdt.validate_gender, (gender)),
+            (vdt.validate_description, (description)),
+            (vdt.validate_date_format, (born)),
+            (vdt.validate_date_format, (died)),
+            (vbl.validate_date_order, (born, died)),
+            (vdt.validate_url, ("pic", pic)),
+            (vdt.validate_url, ("photos", photos)),
+            (vdt.validate_boolean, ("root", root)),
+        ]
 
-        # Validate surname field
-        valid, error_msg = vdt.validate_name_fields("surname", surname)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate gender field
-        valid, error_msg = vdt.validate_gender(gender)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate description field
-        valid, error_msg = vdt.validate_description(description)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate born field
-        valid, error_msg = vdt.validate_date_format(gender)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate died field
-        valid, error_msg = vdt.validate_date_format(gender)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate dates make sense
-        valid, error_msg = vbl.validate_date_order(born, died)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate pic field
-        valid, error_msg = vdt.validate_url("pic", pic)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate photos field
-        valid, error_msg = vdt.validate_url("photos", photos)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
-
-        # Validate root field
-        valid, error_msg = vdt.validate_boolean("root", root)
+        for validator, args in validations:
+            valid, error_msg = validator(*args)
         if not valid:
             return jsonify({"error": error_msg}), 400
 
