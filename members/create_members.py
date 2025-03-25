@@ -38,10 +38,10 @@ def create_member_query(g):
         validations = [
             (vdt.validate_name_fields, ("name", name)),
             (vdt.validate_name_fields, ("surname", surname)),
-            (vdt.validate_gender, (gender)),
-            (vdt.validate_description, (description)),
-            (vdt.validate_date_format, (born)),
-            (vdt.validate_date_format, (died)),
+            (vdt.validate_gender, (gender,)),
+            (vdt.validate_description, (description,)),
+            (vdt.validate_date_format, (born,)),
+            (vdt.validate_date_format, (died,)),
             (vbl.validate_date_order, (born, died)),
             (vdt.validate_url, ("pic", pic)),
             (vdt.validate_url, ("photos", photos)),
@@ -49,9 +49,11 @@ def create_member_query(g):
         ]
 
         for validator, args in validations:
+            print(f"validator: {validator} args: {args}")
             valid, error_msg = validator(*args)
-        if not valid:
-            return jsonify({"error": error_msg}), 400
+            print(f"Valid: {valid} error_msg: {error_msg}")
+            if not valid:
+                return jsonify({"error": error_msg}), 400
 
         new_member = (
             g.addV("_Member")

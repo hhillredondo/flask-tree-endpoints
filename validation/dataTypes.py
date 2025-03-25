@@ -30,7 +30,7 @@ def validate_description(description, max_length=10000):
     return True, ""
 
 
-def validate_date_format(date_str, fmt="%Y-%m-%d"):
+def validate_date_format(date_str, fmt="%Y-%m-%dT%H:%M:%SZ"):
     try:
         return True, datetime.strptime(date_str, fmt)
     except ValueError:
