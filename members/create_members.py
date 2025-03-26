@@ -3,7 +3,7 @@ from utils import normalize_data
 import validation.dataTypes as vdt
 import validation.businessLogic as vbl
 
-
+# TO-DO: Rethink the need for the "Root" property
 def create_member_query(g):
     try:
         data = request.get_json()
@@ -49,9 +49,7 @@ def create_member_query(g):
         ]
 
         for validator, args in validations:
-            print(f"validator: {validator} args: {args}")
             valid, error_msg = validator(*args)
-            print(f"Valid: {valid} error_msg: {error_msg}")
             if not valid:
                 return jsonify({"error": error_msg}), 400
 
