@@ -1,6 +1,3 @@
-import json
-
-
 def normalize_data(vertex):
     try:
         # Extract basic vertex information
@@ -21,3 +18,12 @@ def normalize_data(vertex):
     except Exception as e:
         print(f"Error normalizing data: {e}")
         raise
+
+
+def normalize_edge(edge):
+    return {
+        "id": str(edge.id),
+        "label": edge.label,
+        "source_id": str(edge.outV.id),
+        "target_id": str(edge.inV.id),
+    }

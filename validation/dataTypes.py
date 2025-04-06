@@ -1,9 +1,12 @@
 import re
 from datetime import datetime
+from typing import Literal
 from urllib.parse import urlparse
 
+from flask.json import jsonify
 
-def validate_name_fields(key: str, value, max_length=50, pattern=r"^[a-zA-Z\s'-]+$"):
+
+def validate_member_name(key: str, value, max_length=50, pattern=r"^[a-zA-Z\s'-]+$"):
     if not isinstance(value, str):
         return False, f"Value of {key} must be a string"
     if len(value) > max_length:
@@ -19,7 +22,7 @@ def validate_boolean(key: str, value):
     return True, ""
 
 
-def validate_description(description, max_length=10000):
+def validate_member_description(description, max_length=10000):
     if not isinstance(description, str):
         return False, "Description must be a string"
     if len(description) > max_length:
@@ -81,4 +84,31 @@ def validate_url(key: str, url):
         if not valid:
             return False, f"Invalid {key} URL: {error_msg}"
 
+    return True, ""
+
+
+def validate_relation_type(relation_type: str):
+    if not isinstance(relation_type, str):
+        return False, "Value of relation type must be a string"
+    allowed_relations = {"parent", "spouse"}
+    if relation_type not in allowed_relations:
+        return (
+            False,
+            f"Invalid relation type: {relation_type}. Must be 'parent' or 'spouse'",
+        )
+    return True, ""
+
+
+def validate_vertex_exists(
+    vertex_id: int, source_or_target: Literal["Source", "Target"], g
+):
+    if not isinstance(vertex_id, int):
+        return False, f"Vertex id of {source_or_target} is not a number"
+    if not g.V(vertex_id).hasNext():
+        return False, f"{source_or_target} vertext not found!"
+    return True, ""
+
+def validate_vertex_ids_differ(source_id: int, target_id: int):
+    if source_id == target_id:
+        return False, f"Source and target have the same id: {source_id}"
     return True, ""

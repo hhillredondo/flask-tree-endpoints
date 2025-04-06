@@ -3,6 +3,7 @@ from utils import normalize_data
 import validation.dataTypes as vdt
 import validation.businessLogic as vbl
 
+
 # TO-DO: Rethink the need for the "Root" property
 def create_member_query(g):
     try:
@@ -19,7 +20,6 @@ def create_member_query(g):
         died = data.get("died")
         pic = data.get("pic")
         photos = data.get("photos")
-        root = data.get("root")
 
         required_fields = [
             "name",
@@ -30,22 +30,20 @@ def create_member_query(g):
             "died",
             "pic",
             "photos",
-            "root",
         ]
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
         validations = [
-            (vdt.validate_name_fields, ("name", name)),
-            (vdt.validate_name_fields, ("surname", surname)),
+            (vdt.validate_member_name, ("name", name)),
+            (vdt.validate_member_name, ("surname", surname)),
             (vdt.validate_gender, (gender,)),
-            (vdt.validate_description, (description,)),
+            (vdt.validate_member_description, (description,)),
             (vdt.validate_date_format, (born,)),
             (vdt.validate_date_format, (died,)),
             (vbl.validate_date_order, (born, died)),
             (vdt.validate_url, ("pic", pic)),
             (vdt.validate_url, ("photos", photos)),
-            (vdt.validate_boolean, ("root", root)),
         ]
 
         for validator, args in validations:
@@ -63,7 +61,6 @@ def create_member_query(g):
             .property("died", died)
             .property("pic", pic)
             .property("photos", photos)
-            .property("root", root)
             .next()
         )
 

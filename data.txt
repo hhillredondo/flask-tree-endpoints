@@ -20,3 +20,9 @@
   "photos": "",
   "root": false
 }
+
+{
+  "relation_type": "parent",
+  "source_id": 123,
+  "target_id": 321
+}
