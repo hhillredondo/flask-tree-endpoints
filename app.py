@@ -21,30 +21,21 @@ def get_vertices_count():
         return jsonify({"error": str(e)})
 
 
-# MEMBERS
-
-
-@app.route("/member", methods=["POST"])
-def create_member():
-    return create_member_query(g)
-
-
-@app.route("/member/<member_id>", methods=["GET", "PUT", "DELETE"])
-def member(member_id):
-    if request.method == "GET":
-        return get_member_query(g, member_id)
-    elif request.method == "PUT":
-        return update_member_query(g, member_id)
+@app.route("/member", methods=["POST", "DELETE"])
+def member():
+    if request.method == "POST":
+        return create_member_query(g)
     elif request.method == "DELETE":
-        return delete_member_query(g, member_id)
+        return delete_member_query(g)
+    elif request.method == "GET":
+        return get_member_query(g, 123)
+    elif request.method == "PUT":
+        return update_member_query(g, 123)
 
 
 @app.route("/members", methods=["GET"])
 def get_members():
     return get_all_members_query(g)
-
-
-# RELATIONS
 
 
 @app.route("/relation", methods=["POST"])

@@ -1,16 +1,14 @@
 def normalize_data(vertex):
     try:
-        # Extract basic vertex information
         normalized_data = {
-            "id": str(vertex.id),  # Convert ID to string
+            "id": str(vertex.id),
             "label": vertex.label,
         }
 
-        # Extract properties from the list of VertexProperty objects
         properties = {}
         for prop in vertex.properties:
-            key = prop.key  # Property name (e.g., "name", "born")
-            value = prop.value  # Property value (e.g., "John", "1990-01-01")
+            key = prop.key
+            value = prop.value
             properties[key] = value
 
         normalized_data.update(properties)
