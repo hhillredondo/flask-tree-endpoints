@@ -4,7 +4,6 @@ import validation.dataTypes as vdt
 import validation.businessLogic as vbl
 
 
-# TO-DO: Rethink the need for the "Root" property
 def create_member_query(g):
     try:
         data = request.get_json()
