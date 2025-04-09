@@ -1,4 +1,4 @@
-def normalize_data(vertex):
+def normalize_vertex(vertex):
     try:
         normalized_data = {
             "id": str(vertex.id),

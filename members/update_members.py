@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from utils import normalize_data
+from utils import normalize_vertex
 import validation.dataTypes as vdt
 import validation.businessLogic as vbl
 
@@ -40,7 +40,7 @@ def update_member_query(g):
             validations.append((vdt.validate_date_format, (born,)))
         if died:
             validations.append((vdt.validate_date_format, (died,)))
-            if born: 
+            if born:
                 validations.append((vbl.validate_date_order, (born, died)))
         if pic:
             validations.append((vdt.validate_url, ("pic", pic)))
@@ -72,8 +72,7 @@ def update_member_query(g):
 
         updated_member = traversal.next()
 
-        # Return normalized updated member
-        return jsonify(normalize_data(updated_member)), 200
+        return jsonify(normalize_vertex(updated_member)), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

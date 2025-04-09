@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from utils import normalize_data
+from utils import normalize_vertex
 import validation.dataTypes as vdt
 import validation.businessLogic as vbl
 
@@ -63,7 +63,7 @@ def create_member_query(g):
             .next()
         )
 
-        return normalize_data(new_member), 201
+        return normalize_vertex(new_member), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
