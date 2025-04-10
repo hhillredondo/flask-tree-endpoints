@@ -29,51 +29,28 @@ def get_member_query(g):
 
 def get_all_members_query(g):
     try:
-        members = g.V().toList()
+        all_members = g.V().toList()
 
-        members_data = [
-            {"id": member.id, "name": member.name, "surname": member.surname}
-            for member in members
-        ]
+        normalized_members = [normalize_vertex(member) for member in all_members]
 
-        return jsonify(members_data)
+        return normalized_members
     except Exception as e:
         return jsonify({"error": str(e)})
 
 
-# def get_related_members_query(g, member_id, relations_degree):
-#     try:
+def get_direct_relations_query(g, member_id):
+    try:
+        related_members = (
+            g.V(member_id)
+            .bothE()
+            .group()
+            .by(T.label)
+            .by(__.bothV().valueMap().fold())
+            .toList()
+        )
 
-#         member = g.V(member_id)
-#         for _ in range(relations_degree):
-#             member = member.repeat(g.both()).times(1).simplePath()
+        related_members_data = [normalize_vertex(member) for member in related_members]
 
-#         related_members = member.dedup().toList()
-
-#         related_members_data = [
-#             {"id": vertex.id, "label": vertex.label} for vertex in related_members
-#         ]
-
-#         return jsonify(related_members_data)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
-
-
-# def get_direct_relations_query(g, member_id):
-#     try:
-#         related_members = (
-#             g.V(member_id)
-#             .bothE()
-#             .group()
-#             .by(T.label)
-#             .by(__.bothV().valueMap().fold())
-#             .toList()
-#         )
-
-#         related_members_data = [
-#             {"id": member.id, "label": member.label} for member in related_members
-#         ]
-
-#         return jsonify(related_members_data)
-#     except Exception as e:
-#         return jsonify({"error": str(e)}), 500
+        return related_members_data
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

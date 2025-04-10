@@ -26,7 +26,6 @@ def create_member_query(g):
             "gender",
             "description",
             "born",
-            "died",
             "pic",
             "photos",
         ]
@@ -39,11 +38,13 @@ def create_member_query(g):
             (vdt.validate_gender, (gender,)),
             (vdt.validate_member_description, (description,)),
             (vdt.validate_date_format, (born,)),
-            (vdt.validate_date_format, (died,)),
-            (vbl.validate_date_order, (born, died)),
             (vdt.validate_url, ("pic", pic)),
             (vdt.validate_url, ("photos", photos)),
         ]
+
+        if died:
+            validations.append((vdt.validate_date_format, (died,)))
+            validations.append((vbl.validate_date_order, (born, died)))
 
         for validator, args in validations:
             valid, error_msg = validator(*args)
@@ -57,11 +58,14 @@ def create_member_query(g):
             .property("gender", gender)
             .property("description", description)
             .property("born", born)
-            .property("died", died)
             .property("pic", pic)
             .property("photos", photos)
-            .next()
         )
+
+        if died:
+            new_member = new_member.property("died", died)
+
+        new_member = new_member.next()
 
         return normalize_vertex(new_member), 201
 
