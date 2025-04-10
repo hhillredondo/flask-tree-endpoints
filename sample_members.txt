@@ -1,0 +1,160 @@
+{
+    "name": "Jacob",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1836-01-01T00:00:00Z",
+    "death": "-1689-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Isaac",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1896-01-01T00:00:00Z",
+    "death": "-1716-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Rebekah",
+    "surname": "",
+    "gender": "female",
+    "description": "",
+    "born": "-1929-01-01T00:00:00Z",
+    "death": "-1796-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Abraham",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1996-01-01T00:00:00Z",
+    "death": "-1821-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Sarah",
+    "surname": "",
+    "gender": "female",
+    "description": "",
+    "born": "-2006-01-01T00:00:00Z",
+    "death": "-1821-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Leah",
+    "surname": "",
+    "gender": "female",
+    "description": "",
+    "born": "-1730-01-01T00:00:00Z",
+    "death": "-1664-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Rachel",
+    "surname": "",
+    "gender": "female",
+    "description": "",
+    "born": "-1730-01-01T00:00:00Z",
+    "death": "-1684-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Reuben",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1729-01-01T00:00:00Z",
+    "death": "-1619-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Simeon",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1728-01-01T00:00:00Z",
+    "death": "-1615-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Levi",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1727-01-01T00:00:00Z",
+    "death": "-1613-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Judah",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1726-01-01T00:00:00Z",
+    "death": "-1616-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Issachar",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1725-01-01T00:00:00Z",
+    "death": "-1610-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Zebulun",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1724-01-01T00:00:00Z",
+    "death": "-1608-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Dinah",
+    "surname": "",
+    "gender": "female",
+    "description": "",
+    "born": "-1723-01-01T00:00:00Z",
+    "death": "-1650-01-01T00:00:00Z",
+    "pic": "",
+    "photos": ""
+  },
+  {
+    "name": "Joseph",
+    "surname": "",
+    "gender": "male",
+    "description": "",
+    "born": "-1715-01-01T00:00:00Z",
+    "death": "-1605-01-01T00:00:00Z",
+    "pic":"",
+    "photos":""
+  },
+  {
+    "name":"Benjamin", 
+    "surname":"",
+    "gender":"male", 
+    "description":"",
+    "born":"-1713-01-01T00:00:00Z", 
+    "death":"-1600-01-01T00:00:00Z", 
+    "pic":"",
+    "photos":""
+}
