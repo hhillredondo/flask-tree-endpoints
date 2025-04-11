@@ -2,11 +2,13 @@ import re
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlparse
+from dateutil.parser import parse
+
 
 from flask.json import jsonify
 
 
-def validate_member_name(key: str, value, max_length=50, pattern=r"^[a-zA-Z\s'-]+$"):
+def validate_member_name(key: str, value, max_length=50, pattern=r"^([a-zA-Z\s'-]+)?$"):
     if not isinstance(value, str):
         return False, f"Value of {key} must be a string"
     if len(value) > max_length:
@@ -33,11 +35,12 @@ def validate_member_description(description, max_length=10000):
     return True, ""
 
 
-def validate_date_format(date_str, fmt="%Y-%m-%dT%H:%M:%SZ"):
+def validate_date_format(date_str):
     try:
-        return True, datetime.strptime(date_str, fmt)
-    except ValueError:
-        return False, f"Date '{date_str}' does not match format {fmt}"
+        parsed_date = parse(date_str)
+        return True, parsed_date
+    except ValueError as e:
+        return False, f"Date '{date_str}' is invalid: {str(e)}"
 
 
 def validate_gender(gender):
@@ -107,6 +110,7 @@ def validate_vertex_exists(
     if not g.V(vertex_id).hasNext():
         return False, f"{source_or_target} vertext not found!"
     return True, ""
+
 
 def validate_vertex_ids_differ(source_id: int, target_id: int):
     if source_id == target_id:

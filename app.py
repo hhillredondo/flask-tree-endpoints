@@ -2,7 +2,11 @@ from flask import Flask, jsonify, request
 from gremlin_connection import create_gremlin_connection
 from members.create_members import create_member_query
 from members.update_members import update_member_query
-from members.get_members import get_member_query, get_all_members_query
+from members.get_members import (
+    get_direct_relations_query,
+    get_member_query,
+    get_all_members_query,
+)
 from members.delete_members import delete_member_query
 from relations.create_relations import create_relation_query
 
@@ -31,6 +35,11 @@ def member():
         return get_member_query(g)
     elif request.method == "PUT":
         return update_member_query(g)
+
+
+@app.route("/memberDirectRelations", methods=["GET"])
+def get_direct_relations():
+    return get_direct_relations_query(g)
 
 
 @app.route("/members", methods=["GET"])

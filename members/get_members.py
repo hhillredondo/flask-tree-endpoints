@@ -38,17 +38,31 @@ def get_all_members_query(g):
         return jsonify({"error": str(e)})
 
 
-def get_direct_relations_query(g, member_id):
+def get_direct_relations_query(g):
     try:
+        data = request.get_json()
+
+        if data is None:
+            return jsonify({"error": "No JSON data provided"}), 400
+
+        member_id = data.get("id")
+
+        if not isinstance(member_id, int):
+            return jsonify(f"Vertex id {member_id} is not a number")
+
+        if not g.V(member_id).hasNext():
+            return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
+
         related_members = (
             g.V(member_id)
-            .bothE()
-            .group()
-            .by(T.label)
-            .by(__.bothV().valueMap().fold())
+            .union(
+                __.valueMap(),
+                __.bothE().group().by(T.label).by(__.bothV().valueMap().fold()),
+            )
             .toList()
         )
 
+        # Need to return an object with the member himself, parents array, spouses array, children array
         related_members_data = [normalize_vertex(member) for member in related_members]
 
         return related_members_data
