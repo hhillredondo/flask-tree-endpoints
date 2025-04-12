@@ -48,23 +48,41 @@ def get_direct_relations_query(g):
         member_id = data.get("id")
 
         if not isinstance(member_id, int):
-            return jsonify(f"Vertex id {member_id} is not a number")
+            return jsonify({"error": f"Vertex id {member_id} is not a number"}), 400
 
         if not g.V(member_id).hasNext():
             return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
 
-        related_members = (
+        # TO-DO: Include marriage & divorce dates in each spouse (get from edge)
+        related_members_list = (
             g.V(member_id)
-            .union(
-                __.valueMap(),
-                __.bothE().group().by(T.label).by(__.bothV().valueMap().fold()),
-            )
+            .project("member", "parents", "children", "spouses")
+            .by(__.identity())
+            .by(__.inE("parent").outV().dedup().fold())
+            .by(__.outE("parent").inV().dedup().fold())
+            .by(__.bothE("spouse").otherV().dedup().fold())
             .toList()
         )
 
-        # Need to return an object with the member himself, parents array, spouses array, children array
-        related_members_data = [normalize_vertex(member) for member in related_members]
+        if len(related_members_list) == 0:
+            return jsonify({"error": "No relations found"}), 404
 
-        return related_members_data
+        related_members = related_members_list[0]
+
+        related_members_data = {
+            "member": normalize_vertex(related_members.get("member")),
+            "parents": [
+                normalize_vertex(parent) for parent in related_members.get("parents")
+            ],
+            "children": [
+                normalize_vertex(child) for child in related_members.get("children")
+            ],
+            "spouses": [
+                normalize_vertex(spouse) for spouse in related_members.get("spouses")
+            ],
+        }
+
+        return related_members_data, 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
