@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from utils import normalize_vertex
 import validation.dataTypes as vdt
-import validation.businessLogic as vbl
+import validation.coreTreeLogic as vbl
 
 
 def create_member_query(g):
