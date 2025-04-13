@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 fmt = "%Y-%m-%dT%H:%M:%SZ"
+
 
 def validate_life_date_order(born, died):
     try:
@@ -20,9 +23,7 @@ def validate_parents_number(number_of_parents):
         return True, ""
 
 
-def validate_father_is_alive_and_fertile(
-    father_born, father_died, child_born
-):
+def validate_father_is_alive_and_fertile(father_born, father_died, child_born):
     try:
         father_born_date = datetime.strptime(father_born, fmt)
         father_died_date = datetime.strptime(father_died, fmt)
@@ -45,9 +46,7 @@ def validate_father_is_alive_and_fertile(
         return False, f"Invalid date format: {str(e)}"
 
 
-def validate_mother_is_alive_and_fertile(
-    mother_born, mother_died, child_born
-):
+def validate_mother_is_alive_and_fertile(mother_born, mother_died, child_born):
     try:
         mother_born_date = datetime.strptime(mother_born, fmt)
         mother_died_date = datetime.strptime(mother_died, fmt)
@@ -162,8 +161,18 @@ def verify_marriage_divorce_date_order(married, divorced):
         return False, f"Invalid date format: {str(e)}"
 
 
-# def verify_common_children_born_in_marriage(children_born, marriage_date, divorce_date):
-# def verify_additional_parent_available(child_born, spouses):
+def verify_common_children_born_in_marriage(children_born, married, divorced):
+    married_date = datetime.strptime(married, fmt)
+    divorced_date = datetime.strptime(divorced, fmt)
+    for child_born in children_born:
+        child_born_date = datetime.strptime(child_born, fmt)
+        if not married_date < child_born_date < divorced_date + relativedelta(months=9):
+            return (
+                False,
+                "Child's date of birth has to be within parents' marriage (or up to 9 months after)",
+            )
+
+    return True, ""    
 
 
 def verify_member_is_deletable(relations):
