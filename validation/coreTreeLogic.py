@@ -151,8 +151,11 @@ def validate_groom_and_bride_single_status(
 
 
 def verify_marriage_divorce_date_order(married, divorced):
+
     try:
         married_date = datetime.strptime(married, fmt)
+        if divorced is None:
+            return True, ""
         divorced_date = datetime.strptime(divorced, fmt)
         if married_date > divorced_date:
             return False, "Divorce must come after marriage"
@@ -172,7 +175,7 @@ def verify_common_children_born_in_marriage(children_born, married, divorced):
                 "Child's date of birth has to be within parents' marriage (or up to 9 months after)",
             )
 
-    return True, ""    
+    return True, ""
 
 
 def verify_member_is_deletable(relations):
