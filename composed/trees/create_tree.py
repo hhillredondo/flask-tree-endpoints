@@ -1,0 +1,1 @@
+# Create member with empty properties (or default ones)

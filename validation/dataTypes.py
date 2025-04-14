@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from typing import Literal
 from urllib.parse import urlparse
 from dateutil.parser import parse
