@@ -5,10 +5,8 @@ import validation.coreTreeLogic as ctl
 from gremlin_python.process.graph_traversal import __
 
 
-def create_relation_query(g):
+def create_relation_query(g, data):
     try:
-        data = request.get_json()
-
         # Validate required fields
         required_fields = ["relation_type", "source_id", "target_id"]
 

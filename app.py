@@ -27,19 +27,21 @@ def get_vertices_count():
 
 @app.route("/member", methods=["POST", "DELETE", "GET", "PUT"])
 def member():
+    data = request.get_json()
     if request.method == "POST":
-        return create_member_query(g)
+        return create_member_query(g, data)
     elif request.method == "DELETE":
-        return delete_member_query(g)
+        return delete_member_query(g, data)
     elif request.method == "GET":
-        return get_member_query(g)
+        return get_member_query(g, data)
     elif request.method == "PUT":
-        return update_member_query(g)
+        return update_member_query(g, data)
 
 
 @app.route("/memberDirectRelations", methods=["GET"])
 def get_direct_relations():
-    return get_direct_relations_query(g)
+    data = request.get_json()
+    return get_direct_relations_query(g, data)
 
 
 @app.route("/members", methods=["GET"])
@@ -49,41 +51,46 @@ def get_members():
 
 @app.route("/relation", methods=["POST"])
 def create_relation():
-    return create_relation_query(g)
+    data = request.get_json()
+    return create_relation_query(g, data)
 
 
 @app.route("/child", methods=["POST", "PUT"])
 def child():
+    data = request.get_json()
     if request.method == "POST":
-        return create_child_query(g)
+        return create_child_query(g, data)
     elif request.method == "PUT":
-        return update_child_query(g)
+        return update_child_query(g, data)
 
 
 @app.route("/parent", methods=["POST", "PUT"])
 def parent():
+    data = request.get_json()
     if request.method == "POST":
-        return create_parent_query(g)
+        return create_parent_query(g, data)
     elif request.method == "PUT":
-        return update_parent_query(g)
+        return update_parent_query(g, data)
 
 
 @app.route("/spouse", methods=["POST", "PUT"])
 def spouse():
+    data = request.get_json()
     if request.method == "POST":
-        return create_spouse_query(g)
+        return create_spouse_query(g, data)
     elif request.method == "PUT":
-        return update_spouse_query(g)
+        return update_spouse_query(g, data)
 
 
 @app.route("/tree", methods=["POST", "GET", "DELETE"])
 def tree():
+    data = request.get_json()
     if request.method == "POST":
-        return create_tree_query(g)
+        return create_tree_query(g, data)
     elif request.method == "GET":
-        return get_tree_query(g)
+        return get_tree_query(g, data)
     elif request.method == "DELETE":
-        return update_tree_query(g)
+        return update_tree_query(g, data)
 
 
 if __name__ == "__main__":

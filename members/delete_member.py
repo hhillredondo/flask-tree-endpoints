@@ -1,11 +1,8 @@
 from flask import jsonify, request
 
 
-def delete_member_query(g):
-    print("aargh")
+def delete_member_query(g, data):
     try:
-
-        data = request.get_json()
         member_id = data.get("member_id")
         print("deleting member with id: ", member_id)
 

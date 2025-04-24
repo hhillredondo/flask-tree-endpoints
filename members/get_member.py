@@ -5,10 +5,8 @@ from gremlin_python.process.traversal import T
 from utils import normalize_vertex
 
 
-def get_member_query(g):
+def get_member_query(g, data):
     try:
-        data = request.get_json()
-
         if data is None:
             return jsonify({"error": "No JSON data provided"}), 400
 
@@ -38,10 +36,8 @@ def get_all_members_query(g):
         return jsonify({"error": str(e)})
 
 
-def get_direct_relations_query(g):
+def get_direct_relations_query(g, data):
     try:
-        data = request.get_json()
-
         if data is None:
             return jsonify({"error": "No JSON data provided"}), 400
 

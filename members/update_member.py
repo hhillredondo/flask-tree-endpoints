@@ -4,10 +4,8 @@ import validation.dataTypes as vdt
 import validation.coreTreeLogic as vbl
 
 
-def update_member_query(g):
+def update_member_query(g, data):
     try:
-        data = request.get_json()
-
         if data is None:
             return jsonify({"error": "No JSON data provided"}), 400
 
