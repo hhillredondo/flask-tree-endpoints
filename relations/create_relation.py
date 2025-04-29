@@ -3,6 +3,7 @@ from utils import normalize_edge
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl
 from gremlin_python.process.graph_traversal import __
+from validation.performValidations import perform_validations
 
 
 def create_relation_query(g, data):
@@ -20,7 +21,7 @@ def create_relation_query(g, data):
         source_id = data["source_id"]
         target_id = data["target_id"]
         married = data["married"]
-        divorced = data["divorced"] # Must be passed as null if divorce did not happen
+        divorced = data["divorced"]  # Must be passed as null if divorce did not happen
 
         validations = [
             (vdt.validate_relation_type, (relation_type,)),
@@ -34,10 +35,9 @@ def create_relation_query(g, data):
                 (ctl.verify_marriage_divorce_date_order, (married, divorced))
             )
 
-        for validator, args in validations:
-            valid, error_msg = validator(*args)
-            if not valid:
-                return jsonify({"error": error_msg}), 400
+        result = perform_validations(validations)
+        if result:
+            return result
 
         # Create the relationship
         new_relation = g.V(source_id).addE(relation_type)

@@ -1,7 +1,8 @@
-from flask import jsonify, request
+from flask import jsonify
 from utils import normalize_vertex
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as vbl
+from validation.performValidations import perform_validations
 
 
 def create_member_query(g, data):
@@ -44,10 +45,9 @@ def create_member_query(g, data):
             validations.append((vdt.validate_date_format, (died,)))
             validations.append((vbl.validate_date_order, (born, died)))
 
-        for validator, args in validations:
-            valid, error_msg = validator(*args)
-            if not valid:
-                return jsonify({"error": error_msg}), 400
+        result = perform_validations(validations)
+        if result:
+            return result
 
         new_member = (
             g.addV("_Member")

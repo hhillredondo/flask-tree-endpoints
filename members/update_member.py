@@ -2,6 +2,7 @@ from flask import jsonify, request
 from utils import normalize_vertex
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as vbl
+from validation.performValidations import perform_validations
 
 
 def update_member_query(g, data):
@@ -45,10 +46,9 @@ def update_member_query(g, data):
         if photos:
             validations.append((vdt.validate_url, ("photos", photos)))
 
-        for validator, args in validations:
-            valid, error_msg = validator(*args)
-            if not valid:
-                return jsonify({"error": error_msg}), 400
+        result = perform_validations(validations)
+        if result:
+            return result
 
         traversal = g.V(member_id)
         if name:
