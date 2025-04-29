@@ -24,45 +24,47 @@ def validate_parents_number(number_of_parents):
 
 
 def validate_father_is_alive_and_fertile(father_born, father_died, child_born):
-    try:
-        father_born_date = datetime.strptime(father_born, fmt)
-        father_died_date = datetime.strptime(father_died, fmt)
-        child_born_date = datetime.strptime(child_born, fmt)
-
-        if not father_born_date < child_born_date < father_died_date:
-            return False, "Child must be born within father's lifetime"
-
-        minimum_age = timedelta(days=(12 * 365 + 9 * 30))
-        maximum_age = timedelta(days=(100 * 365))
-        age_difference = child_born_date - father_born_date
-
-        if age_difference < minimum_age:
-            return False, "Father must be at least 12 years old to have a child."
-        if age_difference > maximum_age:
-            return False, "Father must be under 100 years old to have a child."
-
-        return True, ""
-    except ValueError as e:
-        return False, f"Invalid date format: {str(e)}"
+    _validate_parent_is_alive_and_fertile("male", father_born, father_died, child_born)
 
 
 def validate_mother_is_alive_and_fertile(mother_born, mother_died, child_born):
+    _validate_parent_is_alive_and_fertile("female", mother_born, mother_died, child_born)
+
+
+def _validate_parent_is_alive_and_fertile(
+    parent_gender, parent_born, parent_died, child_born
+):
+    maximum_ages = {
+        "male": 100,
+        "female": 60,
+    }
+    parent_names = {
+        "male": "Father",
+        "female": "Mother",
+    }
+    parent_name = parent_names.get(parent_gender)
     try:
-        mother_born_date = datetime.strptime(mother_born, fmt)
-        mother_died_date = datetime.strptime(mother_died, fmt)
+        mother_born_date = datetime.strptime(parent_born, fmt)
+        mother_died_date = datetime.strptime(parent_died, fmt)
         child_born_date = datetime.strptime(child_born, fmt)
 
         if not mother_born_date < child_born_date < mother_died_date:
-            return False, "Child must be born within mother's lifetime"
+            return (
+                False,
+                f"Child must be born within {parent_name}'s lifetime",
+            )
 
         minimum_age = timedelta(days=(12 * 365 + 9 * 30))
-        maximum_age = timedelta(days=(60 * 365))
+        maximum_age = timedelta(days=(maximum_ages.get(parent_gender) * 365))
         age_difference = child_born_date - mother_born_date
 
         if age_difference < minimum_age:
-            return False, "Mother must be at least 12 years old to have a child."
+            return (
+                False,
+                f"{parent_name} must be at least 12 years old to have a child.",
+            )
         if age_difference > maximum_age:
-            return False, "Mother must be under 60 years old to have a child."
+            return False, f"{parent_name} must be under 60 years old to have a child."
 
         return True, ""
     except ValueError as e:
@@ -74,7 +76,40 @@ def validate_heterosexual_marriage(first_gender, second_gender):
         return False, "Spouses cannot have the same gender"
 
 
-def validate_siblings_birth_dates(born, siblings_born):
+def validate_father_side_siblings_birth_dates(born, mother, siblings):
+    try:
+        born_date = datetime.strptime(born, fmt)
+        children_born_together = []
+        nine_months = timedelta(days=9 * 30)
+
+        for sibling in siblings:
+            sibling_mother = sibling.get("mother")
+            if sibling_mother != mother:
+                continue
+            sibling_born = sibling.get("born")
+            sibling_born_date = datetime.strptime(sibling_born, fmt)
+
+            if sibling_born_date == born_date:
+                children_born_together.append(sibling_born)
+            else:
+                if abs((born_date - sibling_born_date).days) < nine_months.days:
+                    return (
+                        False,
+                        f"Child cannot be born less than 9 months before or after a sibling's birth date: {sibling_born}",
+                    )
+
+        if len(children_born_together) > 8:
+            return (
+                False,
+                "A child may share an exact birth date with up to 8 siblings only.",
+            )
+
+        return True, ""
+    except ValueError as e:
+        return False, f"Invalid date format: {str(e)}"
+
+
+def validate_mother_side_siblings_birth_dates(born, siblings_born):
     try:
         born_date = datetime.strptime(born, fmt)
         children_born_together = []
