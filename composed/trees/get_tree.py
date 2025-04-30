@@ -1,7 +1,7 @@
 from flask import jsonify
 
 
-def create_tree(g, data):
+def get_tree(g, data):
 
     # Return some statistics, eg.
     # Number of members

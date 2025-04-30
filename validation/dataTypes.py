@@ -107,7 +107,7 @@ def validate_vertex_exists(
     if not isinstance(vertex_id, int):
         return False, f"Vertex id of {source_or_target} is not a number"
     if not g.V(vertex_id).hasNext():
-        return False, f"{source_or_target} vertext not found!"
+        return False, f"{source_or_target} vertex not found!"
     return True, ""
 
 

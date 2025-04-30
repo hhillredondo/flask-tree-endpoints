@@ -1,4 +1,10 @@
 from flask import Flask, jsonify, request
+from composed.children.create_child import create_child
+from composed.parents.create_parent import create_parent
+from composed.spouses.create_spouse import create_spouse
+from composed.trees.create_tree import create_tree
+from composed.trees.get_tree import get_tree
+from composed.trees.delete_tree import delete_tree
 from gremlin_connection import create_gremlin_connection
 from members.create_member import create_member_query
 from members.update_member import update_member_query
@@ -59,38 +65,38 @@ def create_relation():
 def child():
     data = request.get_json()
     if request.method == "POST":
-        return create_child_query(g, data)
+        return create_child(g, data)
     elif request.method == "PUT":
-        return update_child_query(g, data)
+        return update_child(g, data)
 
 
 @app.route("/parent", methods=["POST", "PUT"])
 def parent():
     data = request.get_json()
     if request.method == "POST":
-        return create_parent_query(g, data)
+        return create_parent(g, data)
     elif request.method == "PUT":
-        return update_parent_query(g, data)
+        return update_parent(g, data)
 
 
 @app.route("/spouse", methods=["POST", "PUT"])
 def spouse():
     data = request.get_json()
     if request.method == "POST":
-        return create_spouse_query(g, data)
+        return create_spouse(g, data)
     elif request.method == "PUT":
-        return update_spouse_query(g, data)
+        return update_spouse(g, data)
 
 
 @app.route("/tree", methods=["POST", "GET", "DELETE"])
 def tree():
     data = request.get_json()
     if request.method == "POST":
-        return create_tree_query(g, data)
+        return create_tree(g, data)
     elif request.method == "GET":
-        return get_tree_query(g, data)
+        return get_tree(g, data)
     elif request.method == "DELETE":
-        return update_tree_query(g, data)
+        return delete_tree(g, data)
 
 
 if __name__ == "__main__":

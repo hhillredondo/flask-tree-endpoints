@@ -1,7 +1,7 @@
 from flask import jsonify
 
 
-def create_tree(g, data):
+def delete_tree(g, data):
 
     # Delete vertices with a given partition key
 

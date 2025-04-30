@@ -23,15 +23,7 @@ def validate_parents_number(number_of_parents):
         return True, ""
 
 
-def validate_father_is_alive_and_fertile(father_born, father_died, child_born):
-    _validate_parent_is_alive_and_fertile("male", father_born, father_died, child_born)
-
-
-def validate_mother_is_alive_and_fertile(mother_born, mother_died, child_born):
-    _validate_parent_is_alive_and_fertile("female", mother_born, mother_died, child_born)
-
-
-def _validate_parent_is_alive_and_fertile(
+def validate_parent_is_alive_and_fertile(
     parent_gender, parent_born, parent_died, child_born
 ):
     maximum_ages = {
@@ -44,19 +36,23 @@ def _validate_parent_is_alive_and_fertile(
     }
     parent_name = parent_names.get(parent_gender)
     try:
-        mother_born_date = datetime.strptime(parent_born, fmt)
-        mother_died_date = datetime.strptime(parent_died, fmt)
+        parent_born_date = datetime.strptime(parent_born, fmt)
         child_born_date = datetime.strptime(child_born, fmt)
+        if parent_died is None or parent_died == "":
+            parent_died_date = None
+        else:
+            parent_died_date = datetime.strptime(parent_died, fmt)
 
-        if not mother_born_date < child_born_date < mother_died_date:
-            return (
-                False,
-                f"Child must be born within {parent_name}'s lifetime",
-            )
+        if parent_died_date is not None:
+            if not parent_born_date < child_born_date < parent_died_date:
+                return (False, f"Child must be born within {parent_name}'s lifetime")
+        else:
+            if parent_born_date >= child_born_date:
+                return (False, f"Child must be born after {parent_name}'s birth")
 
         minimum_age = timedelta(days=(12 * 365 + 9 * 30))
         maximum_age = timedelta(days=(maximum_ages.get(parent_gender) * 365))
-        age_difference = child_born_date - mother_born_date
+        age_difference = child_born_date - parent_born_date
 
         if age_difference < minimum_age:
             return (

@@ -8,7 +8,7 @@ from members.create_member import create_member_query
 def create_parent(g, data):
 
     try:
-        # if child has a parent already, return
+        # if child has a parent already, create spouse to the other parent
         # validate_life_date_order
         # if parent is male
         #   validate_father_is_alive_and_fertile
