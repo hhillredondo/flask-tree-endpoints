@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from composed.children.create_child import create_child
 from composed.parents.create_parent import create_parent
+from composed.spouses import update_spouse_relation
 from composed.spouses.create_spouse import create_spouse
 from composed.trees.create_tree import create_tree
 from composed.trees.get_tree import get_tree
@@ -61,22 +62,18 @@ def create_relation():
     return create_relation_query(g, data)
 
 
-@app.route("/child", methods=["POST", "PUT"])
+@app.route("/child", methods=["POST"])
 def child():
     data = request.get_json()
     if request.method == "POST":
         return create_child(g, data)
-    elif request.method == "PUT":
-        return update_child(g, data)
 
 
-@app.route("/parent", methods=["POST", "PUT"])
+@app.route("/parent", methods=["POST"])
 def parent():
     data = request.get_json()
     if request.method == "POST":
         return create_parent(g, data)
-    elif request.method == "PUT":
-        return update_parent(g, data)
 
 
 @app.route("/spouse", methods=["POST", "PUT"])
@@ -85,7 +82,7 @@ def spouse():
     if request.method == "POST":
         return create_spouse(g, data)
     elif request.method == "PUT":
-        return update_spouse(g, data)
+        return update_spouse_relation(g, data)
 
 
 @app.route("/tree", methods=["POST", "GET", "DELETE"])

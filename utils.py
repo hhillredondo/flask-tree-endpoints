@@ -1,3 +1,11 @@
+from typing import List, Dict, Any
+from datetime import datetime, timedelta
+from gremlin_python.process.graph_traversal import __, elementMap, otherV
+
+
+fmt = "%Y-%m-%dT%H:%M:%SZ"
+
+
 def normalize_vertex(vertex):
     try:
         normalized_data = {
@@ -27,28 +35,99 @@ def normalize_edge(edge):
     }
 
 
-def check_gender(vertex_id: int, g):
-    gender_iter = g.V(vertex_id).values("gender")
-    if gender_iter.hasNext():
-        gender = gender_iter.next()
-        return True, "", gender
-    else:
-        return False, "Vertex does not have a 'gender' property", None
+def get_gender(vertex_id: int, g):
+    gender = g.V(vertex_id).values("gender").next()
+    return gender
 
 
-def check_born(vertex_id: int, g):
-    born_iter = g.V(vertex_id).values("born")
-    if born_iter.hasNext():
-        born = born_iter.next()
-        return True, "", born
-    else:
-        return False, "Vertex does not have a 'born' property", None
+def get_born(vertex_id: int, g):
+    born = g.V(vertex_id).values("born")
+    return born
 
 
-def check_died(vertex_id: int, g):
+def get_died(vertex_id: int, g):
     died_iter = g.V(vertex_id).values("died")
     if died_iter.hasNext():
         died = died_iter.next()
-        return True, "", died
+        return died
     else:
-        return False, "Vertex does not have a 'died' property", None
+        return None
+
+
+def get_potential_spouse_at_child_birth(vertex_id: int, child_born: str, g):
+    try:
+        child_date = datetime.strptime(child_born, fmt)
+    except ValueError:
+        return None
+
+    for edge_data in (
+        g.V(vertex_id)
+        .bothE("spouse")
+        .project("edge", "spouse")
+        .by(elementMap())
+        .by(otherV().elementMap())
+        .toList()
+    ):
+        edge = edge_data["edge"]
+        spouse = edge_data["spouse"]
+
+        married_str = edge.get("married")
+        divorced_str = edge.get("divorced")
+
+        try:
+            married_date = datetime.strptime(married_str, fmt)
+            divorced_date = (
+                datetime.strptime(divorced_str, fmt) if divorced_str else None
+            )
+        except (TypeError, ValueError):
+            continue
+
+        if married_date <= child_date:
+            cutoff_date = (
+                divorced_date + timedelta(days=9 * 30) if divorced_date else None
+            )
+            if not divorced_date or child_date <= cutoff_date:
+                return spouse
+
+    return None
+
+
+def get_parents_number(vertex_id: int, g):
+    return g.V(vertex_id).in_("parent").count().next()
+
+
+def get_parents_other_children_birth_dates(vertex_id: int, g):
+    children = g.V(vertex_id).out("parent").toList()
+
+    return [child.valueMap().get("born")[0] for child in children]
+
+
+def get_marriages(vertex_id: int, g):
+    edges = g.V(vertex_id).bothE("spouse").elementMap().toList()
+
+    return [
+        {"married": edge.get("married"), "divorced": edge.get("divorced")}
+        for edge in edges
+    ]
+
+
+def get_children(vertex_id: int, g) -> List[Dict[str, Any]]:
+    children = g.V(vertex_id).out("parent").elementMap().toList()
+    return children
+
+
+def check_date_is_in_period(date: str, start: str, end: str | None):
+    try:
+        date_date = datetime.strptime(date, fmt)
+        start_date = datetime.strptime(start, fmt)
+
+        if not end and start_date < date_date:
+            return True
+
+        end_date = datetime.strptime(end, fmt)
+
+        if start_date < date_date < end_date + timedelta(days=9 * 30):
+            return True
+        return False
+    except ValueError:
+        return None

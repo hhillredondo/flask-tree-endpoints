@@ -19,10 +19,7 @@ def update_member_query(g, data):
 
         name = data.get("name")
         surname = data.get("surname")
-        gender = data.get("gender")
         description = data.get("description")
-        born = data.get("born")
-        died = data.get("died")
         pic = data.get("pic")
         photos = data.get("photos")
 
@@ -31,16 +28,8 @@ def update_member_query(g, data):
             validations.append((vdt.validate_member_name, ("name", name)))
         if surname:
             validations.append((vdt.validate_member_name, ("surname", surname)))
-        if gender:
-            validations.append((vdt.validate_gender, (gender,)))
         if description:
             validations.append((vdt.validate_member_description, (description,)))
-        if born:
-            validations.append((vdt.validate_date_format, (born,)))
-        if died:
-            validations.append((vdt.validate_date_format, (died,)))
-            if born:
-                validations.append((vbl.validate_date_order, (born, died)))
         if pic:
             validations.append((vdt.validate_url, ("pic", pic)))
         if photos:
@@ -55,14 +44,8 @@ def update_member_query(g, data):
             traversal.property("name", name)
         if surname:
             traversal.property("surname", surname)
-        if gender:
-            traversal.property("gender", gender)
         if description:
             traversal.property("description", description)
-        if born:
-            traversal.property("born", born)
-        if died:
-            traversal.property("died", died)
         if pic:
             traversal.property("pic", pic)
         if photos:

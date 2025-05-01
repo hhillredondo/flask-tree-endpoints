@@ -72,40 +72,7 @@ def validate_heterosexual_marriage(first_gender, second_gender):
         return False, "Spouses cannot have the same gender"
 
 
-def validate_father_side_siblings_birth_dates(born, mother, siblings):
-    try:
-        born_date = datetime.strptime(born, fmt)
-        children_born_together = []
-        nine_months = timedelta(days=9 * 30)
-
-        for sibling in siblings:
-            sibling_mother = sibling.get("mother")
-            if sibling_mother != mother:
-                continue
-            sibling_born = sibling.get("born")
-            sibling_born_date = datetime.strptime(sibling_born, fmt)
-
-            if sibling_born_date == born_date:
-                children_born_together.append(sibling_born)
-            else:
-                if abs((born_date - sibling_born_date).days) < nine_months.days:
-                    return (
-                        False,
-                        f"Child cannot be born less than 9 months before or after a sibling's birth date: {sibling_born}",
-                    )
-
-        if len(children_born_together) > 8:
-            return (
-                False,
-                "A child may share an exact birth date with up to 8 siblings only.",
-            )
-
-        return True, ""
-    except ValueError as e:
-        return False, f"Invalid date format: {str(e)}"
-
-
-def validate_mother_side_siblings_birth_dates(born, siblings_born):
+def validate_siblings_birth_dates(born, siblings_born):
     try:
         born_date = datetime.strptime(born, fmt)
         children_born_together = []

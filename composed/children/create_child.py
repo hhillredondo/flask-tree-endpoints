@@ -1,8 +1,14 @@
-from flask import jsonify, request
-from utils import check_born, check_died, check_gender, normalize_vertex
+from flask import jsonify
+from utils import (
+    get_born,
+    get_died,
+    get_gender,
+    get_potential_spouse_at_child_birth,
+    get_parents_other_children_birth_dates,
+    normalize_vertex,
+)
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl
-from members.create_member import create_member_query
 from validation.performValidations import perform_validations
 
 
@@ -23,6 +29,7 @@ def create_child(g, data):
         photos = data.get("photos")
 
         required_fields = [
+            "parent_id",
             "name",
             "surname",
             "gender",
@@ -49,9 +56,9 @@ def create_child(g, data):
             validations.append((vdt.validate_date_format, (died,)))
             validations.append((ctl.validate_life_date_order, (born, died)))
 
-        parent_gender = check_gender(parent_id, g)
-        parent_born = check_born(parent_id, g)
-        parent_died = check_died(parent_id, g)
+        parent_gender = get_gender(parent_id, g)
+        parent_born = get_born(parent_id, g)
+        parent_died = get_died(parent_id, g)
 
         validations.append(
             (
@@ -60,19 +67,66 @@ def create_child(g, data):
             )
         )
 
+        parent_children_birth_dates = get_parents_other_children_birth_dates(
+            parent_id, g
+        )
+        validations.append(
+            (
+                ctl.validate_siblings_birth_dates,
+                (born, parent_children_birth_dates),
+            )
+        )
+
+        potential_spouse = get_potential_spouse_at_child_birth(parent_id, born, g)
+        spouse_id = potential_spouse.get("id")
+
+        if potential_spouse != None:
+            spouse_gender = potential_spouse.get("gender")
+            spouse_born = potential_spouse.get("born")
+            spouse_died = potential_spouse.get("died")
+            validations.append(
+                (
+                    ctl.validate_parent_is_alive_and_fertile,
+                    (spouse_gender, spouse_born, spouse_died, born),
+                )
+            )
+
+            spouse_children_birth_dates = get_parents_other_children_birth_dates(
+                spouse_id, g
+            )
+            validations.append(
+                (
+                    ctl.validate_siblings_birth_dates,
+                    (born, spouse_children_birth_dates),
+                )
+            )
+
         result = perform_validations(validations)
         if result:
             return result
 
-        # if parent is in a marriage on child's birth date - 9 months
-        #   validate_mother_is_alive_and_fertile / validate_father_is_alive_and_fertile
-        # if has father && father has other children
-        #   validate_father_side_siblings_birth_dates
-        # if has mother && mother has other children
-        #   validate_mother_side_siblings_birth_dates
-        # Create child member connected to parent (& other parent if it exists)
+        child = (
+            g.addV("_Member")
+            .property("name", name)
+            .property("surname", surname)
+            .property("gender", gender)
+            .property("description", description)
+            .property("born", born)
+            .property("pic", pic)
+            .property("photos", photos)
+        )
 
-        create_member_query(g, data)
+        if died:
+            child = child.property("died", died)
+
+        child = child.as_("child").V(parent_id).addE("parent").to("child")
+
+        if potential_spouse != None:
+            child.V(spouse_id).addE("parent").to("child")
+
+        child = child.next()
+
+        return normalize_vertex(child), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
