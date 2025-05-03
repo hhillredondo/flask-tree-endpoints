@@ -116,6 +116,12 @@ def get_children(vertex_id: int, g) -> List[Dict[str, Any]]:
     return children
 
 
+# TO-DO: get common children between two parents
+def get_common_children(vertex_id: int, vertex_id_2: int, g):
+    children = g.V(vertex_id).out("parent").elementMap().toList()
+    return children
+
+
 def check_date_is_in_period(date: str, start: str, end: str | None):
     try:
         date_date = datetime.strptime(date, fmt)

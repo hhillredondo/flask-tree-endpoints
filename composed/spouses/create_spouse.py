@@ -39,6 +39,8 @@ def create_spouse(g, data):
             "born",
             "pic",
             "photos",
+            "married",
+            "divorced"
         ]
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
