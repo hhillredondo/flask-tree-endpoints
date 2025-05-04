@@ -116,10 +116,26 @@ def get_children(vertex_id: int, g) -> List[Dict[str, Any]]:
     return children
 
 
-# TO-DO: get common children between two parents
-def get_common_children(vertex_id: int, vertex_id_2: int, g):
-    children = g.V(vertex_id).out("parent").elementMap().toList()
-    return children
+def get_common_children(parent1_id: int, parent2_id: int, g):
+    common_children = (
+        g.V(parent1_id)
+        .out("parent")
+        .where(__.in_("parent").is_(parent2_id))
+        .elementMap()
+        .toList()
+    )
+    return common_children
+
+
+def get_common_children_birth_dates(parent1_id: int, parent2_id: int, g):
+    common_children_born = (
+        g.V(parent1_id)
+        .out("parent")
+        .where(__.in_("parent").is_(parent2_id))
+        .values("born")
+        .toList()
+    )
+    return common_children_born
 
 
 def check_date_is_in_period(date: str, start: str, end: str | None):
@@ -137,3 +153,10 @@ def check_date_is_in_period(date: str, start: str, end: str | None):
         return False
     except ValueError:
         return None
+
+
+def get_marriage_id(husband_id: int, wife_id: int, g):
+    marriage_id = (
+        g.V(husband_id).bothE("spouse").where(__.otherV().hasId(wife_id)).id().next()
+    )
+    return marriage_id
