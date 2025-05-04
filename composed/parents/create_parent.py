@@ -36,12 +36,10 @@ def create_parent(g, data):
             return jsonify({"error": "Missing required fields"}), 400
 
         existing_parents = get_parents_number(child_id, g)
-        if existing_parents == 1:
-            create_spouse(g, data)
-            return
 
         validations = [
             (vdt.validate_vertex_exists, (child_id, "Target", g)),
+            (ctl.validate_parents_number, (existing_parents,)),
             (vdt.validate_member_name, ("name", name)),
             (vdt.validate_member_name, ("surname", surname)),
             (vdt.validate_gender, (gender,)),
@@ -49,7 +47,6 @@ def create_parent(g, data):
             (vdt.validate_date_format, (born,)),
             (vdt.validate_url, ("pic", pic)),
             (vdt.validate_url, ("photos", photos)),
-            (ctl.validate_parents_number, (existing_parents,)),
         ]
 
         if died:
@@ -84,6 +81,7 @@ def create_parent(g, data):
 
         parent = parent.next()
 
+        # TO-DO: Return parent vertex instead of edge
         return normalize_vertex(parent), 201
 
     except Exception as e:

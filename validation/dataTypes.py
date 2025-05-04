@@ -1,10 +1,9 @@
+from datetime import datetime
 import re
 from typing import Literal
 from urllib.parse import urlparse
-from dateutil.parser import parse
 
-
-from flask.json import jsonify
+fmt = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def validate_member_name(key: str, value, max_length=50, pattern=r"^([a-zA-Z\s'-]+)?$"):
@@ -36,7 +35,7 @@ def validate_member_description(description, max_length=10000):
 
 def validate_date_format(date_str):
     try:
-        parsed_date = parse(date_str)
+        parsed_date = datetime.strptime(date_str, fmt)
         return True, parsed_date
     except ValueError as e:
         return False, f"Date '{date_str}' is invalid: {str(e)}"

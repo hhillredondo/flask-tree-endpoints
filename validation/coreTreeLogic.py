@@ -17,6 +17,11 @@ def validate_life_date_order(born, died):
 
 
 def validate_parents_number(number_of_parents):
+    if number_of_parents == 1:
+        return (
+            False,
+            "Member already has 1 parent. Create a spouse to the parent instead.",
+        )
     if number_of_parents == 2:
         return False, "Member already has 2 parents"
     elif number_of_parents < 2:
@@ -70,6 +75,7 @@ def validate_parent_is_alive_and_fertile(
 def validate_heterosexual_marriage(first_gender, second_gender):
     if first_gender == second_gender:
         return False, "Spouses cannot have the same gender"
+    return True, ""
 
 
 def validate_siblings_birth_dates(born, siblings_born):
@@ -144,6 +150,24 @@ def validate_groom_and_bride_single_status(
             return False, f"Bride: {bride_message}"
 
         return True, ""
+    except ValueError as e:
+        return False, f"Invalid date format: {str(e)}"
+
+
+def verify_legal_marriage_age(born, married):
+    try:
+        born_date = datetime.strptime(born, fmt)
+        married_date = datetime.strptime(married, fmt)
+
+        diff = abs(married_date.year - born_date.year)
+
+        if (married_date.month, married_date.day) < (born_date.month, born_date.day):
+            diff -= 1
+
+        if diff >= 16:
+            return True, ""
+
+        return False, "Member must be at least 16 to get married"
     except ValueError as e:
         return False, f"Invalid date format: {str(e)}"
 

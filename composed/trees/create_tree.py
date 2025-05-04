@@ -8,7 +8,7 @@ def create_tree(g, data):
     # Assign permissions to tree creator
 
     try:
-        create_member_query(g, data)
+        return create_member_query(g, data)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

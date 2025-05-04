@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from gremlin_python.process.graph_traversal import __, elementMap, otherV
 
@@ -41,7 +41,7 @@ def get_gender(vertex_id: int, g):
 
 
 def get_born(vertex_id: int, g):
-    born = g.V(vertex_id).values("born")
+    born = g.V(vertex_id).values("born").next()
     return born
 
 
@@ -138,7 +138,7 @@ def get_common_children_birth_dates(parent1_id: int, parent2_id: int, g):
     return common_children_born
 
 
-def check_date_is_in_period(date: str, start: str, end: str | None):
+def check_date_is_in_period(date: str, start: str, end: Optional[str]):
     try:
         date_date = datetime.strptime(date, fmt)
         start_date = datetime.strptime(start, fmt)
