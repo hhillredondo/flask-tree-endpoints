@@ -97,9 +97,7 @@ def get_parents_number(vertex_id: int, g):
 
 
 def get_parents_other_children_birth_dates(vertex_id: int, g):
-    children = g.V(vertex_id).out("parent").toList()
-
-    return [child.valueMap().get("born")[0] for child in children]
+    return g.V(vertex_id).out("parent").values("born").toList()
 
 
 def get_marriages(vertex_id: int, g):

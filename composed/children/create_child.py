@@ -10,6 +10,7 @@ from utils import (
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
+from gremlin_python.process.traversal import T
 
 
 def create_child(g, data):
@@ -41,8 +42,11 @@ def create_child(g, data):
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
+        parent_exists, error_msg = vdt.validate_vertex_exists(parent_id, "Source", g)
+        if not parent_exists:
+            return jsonify({"error": error_msg}), 400
+
         validations = [
-            (vdt.validate_vertex_exists, (parent_id, "Source", g)),
             (vdt.validate_member_name, ("name", name)),
             (vdt.validate_member_name, ("surname", surname)),
             (vdt.validate_gender, (gender,)),
@@ -78,9 +82,10 @@ def create_child(g, data):
         )
 
         potential_spouse = get_potential_spouse_at_child_birth(parent_id, born, g)
-        spouse_id = potential_spouse.get("id")
+        print("potential parent: ", potential_spouse)
 
         if potential_spouse != None:
+            spouse_id = potential_spouse.get(T.id)
             spouse_gender = potential_spouse.get("gender")
             spouse_born = potential_spouse.get("born")
             spouse_died = potential_spouse.get("died")
@@ -122,6 +127,7 @@ def create_child(g, data):
         child = child.as_("child").V(parent_id).addE("parent").to("child")
 
         if potential_spouse != None:
+            spouse_id = potential_spouse.get(T.id)
             child.V(spouse_id).addE("parent").to("child")
 
         child = child.next()
