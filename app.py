@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from composed.children.create_child import create_child
 from composed.parents.create_parent import create_parent
-from composed.spouses import update_spouse_relation
+from composed.spouses.update_spouse_relation import update_spouse_relation
 from composed.spouses.create_spouse import create_spouse
 from composed.trees.create_tree import create_tree
 from composed.trees.get_tree import get_tree

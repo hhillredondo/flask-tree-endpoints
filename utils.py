@@ -155,6 +155,7 @@ def check_date_is_in_period(date: str, start: str, end: Optional[str]):
 
 def get_marriage_id(husband_id: int, wife_id: int, g):
     marriage_id = (
-        g.V(husband_id).bothE("spouse").where(__.otherV().hasId(wife_id)).id().next()
+        g.V(husband_id).bothE("spouse").where(__.otherV().hasId(wife_id)).id_().next()
     )
+
     return marriage_id

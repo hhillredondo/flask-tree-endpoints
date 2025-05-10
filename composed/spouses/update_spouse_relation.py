@@ -28,6 +28,14 @@ def update_spouse_relation(g, data):
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
+        husband_exists, error_msg = vdt.validate_vertex_exists(husband_id, "Source", g)
+        if not husband_exists:
+            return jsonify({"error": error_msg}), 400
+
+        wife_exists, error_msg = vdt.validate_vertex_exists(wife_id, "Target", g)
+        if not wife_exists:
+            return jsonify({"error": error_msg}), 400
+
         marriage_id = get_marriage_id(husband_id, wife_id, g)
 
         husband_marriages = get_marriages(husband_id, g)
@@ -52,7 +60,7 @@ def update_spouse_relation(g, data):
         result = perform_validations(validations)
         if result:
             return result
-
+        
         updated_spouse_relation = (
             g.E(marriage_id)
             .property("married", married)
