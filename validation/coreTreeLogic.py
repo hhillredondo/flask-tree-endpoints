@@ -3,6 +3,7 @@ from dateutil.relativedelta import relativedelta
 
 
 fmt = "%Y-%m-%dT%H:%M:%SZ"
+DISTANT_FUTURE_DATE = datetime(9999, 1, 1)
 
 
 def validate_life_date_order(born, died):
@@ -110,15 +111,20 @@ def validate_siblings_birth_dates(born, siblings_born):
 def validate_groom_and_bride_single_status(
     marriage_date, groom_marriages, bride_marriages
 ):
+    if len(groom_marriages) == 0 & len(bride_marriages) == 0:
+        return True, ""
+
     try:
         marriage_date_parsed = datetime.strptime(marriage_date, fmt)
 
         def is_single_at_marriage(marriages, marriage_date):
+            if len(marriages) == 0:
+                return True, ""
             for marriage in marriages:
-                start_date = datetime.strptime(marriage["marriage_date"], fmt)
+                start_date = datetime.strptime(marriage["married"], fmt)
                 end_date = (
-                    datetime.strptime(marriage["divorce_date"], fmt)
-                    if marriage["divorce_date"]
+                    datetime.strptime(marriage["divorced"], fmt)
+                    if marriage["divorced"]
                     else None
                 )
 
@@ -159,6 +165,9 @@ def verify_legal_marriage_age(born, married):
         born_date = datetime.strptime(born, fmt)
         married_date = datetime.strptime(married, fmt)
 
+        if married_date < born_date:
+            return False, "Marriage date cannot be before birth date"
+
         diff = abs(married_date.year - born_date.year)
 
         if (married_date.month, married_date.day) < (born_date.month, born_date.day):
@@ -188,7 +197,11 @@ def verify_marriage_divorce_date_order(married, divorced):
 
 def verify_common_children_born_in_marriage(children_born, married, divorced):
     married_date = datetime.strptime(married, fmt)
-    divorced_date = datetime.strptime(divorced, fmt)
+    if divorced is None:
+        divorced_date = DISTANT_FUTURE_DATE
+    else:
+        divorced_date = datetime.strptime(divorced, fmt)
+
     for child_born in children_born:
         child_born_date = datetime.strptime(child_born, fmt)
         if not married_date < child_born_date < divorced_date + relativedelta(months=9):

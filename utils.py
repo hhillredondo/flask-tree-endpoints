@@ -118,7 +118,7 @@ def get_common_children(parent1_id: int, parent2_id: int, g):
     common_children = (
         g.V(parent1_id)
         .out("parent")
-        .where(__.in_("parent").is_(parent2_id))
+        .where(__.in_("parent").hasId(parent2_id))
         .elementMap()
         .toList()
     )
@@ -129,7 +129,7 @@ def get_common_children_birth_dates(parent1_id: int, parent2_id: int, g):
     common_children_born = (
         g.V(parent1_id)
         .out("parent")
-        .where(__.in_("parent").is_(parent2_id))
+        .where(__.in_("parent").hasId(parent2_id))
         .values("born")
         .toList()
     )
@@ -156,6 +156,18 @@ def check_date_is_in_period(date: str, start: str, end: Optional[str]):
 def get_marriage_id(husband_id: int, wife_id: int, g):
     marriage_id = (
         g.V(husband_id).bothE("spouse").where(__.otherV().hasId(wife_id)).id_().next()
+    )
+
+    return marriage_id
+
+
+def get_marriage_date(husband_id: int, wife_id: int, g):
+    marriage_id = (
+        g.V(husband_id)
+        .bothE("spouse")
+        .where(__.otherV().hasId(wife_id))
+        .values("married")
+        .next()
     )
 
     return marriage_id

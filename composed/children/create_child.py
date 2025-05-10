@@ -82,7 +82,6 @@ def create_child(g, data):
         )
 
         potential_spouse = get_potential_spouse_at_child_birth(parent_id, born, g)
-        print("potential parent: ", potential_spouse)
 
         if potential_spouse != None:
             spouse_id = potential_spouse.get(T.id)

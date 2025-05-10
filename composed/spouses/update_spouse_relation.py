@@ -1,6 +1,8 @@
 from flask import jsonify
 from utils import (
+    get_born,
     get_common_children_birth_dates,
+    get_marriage_date,
     get_marriage_id,
     get_marriages,
     normalize_edge,
@@ -37,16 +39,30 @@ def update_spouse_relation(g, data):
             return jsonify({"error": error_msg}), 400
 
         marriage_id = get_marriage_id(husband_id, wife_id, g)
+        current_married_value = get_marriage_date(husband_id, wife_id, g)
 
-        husband_marriages = get_marriages(husband_id, g)
-        wife_marriages = get_marriages(wife_id, g)
+        husband_marriages = [
+            d
+            for d in get_marriages(husband_id, g)
+            if d.get("married") != current_married_value
+        ]
+        wife_marriages = [
+            d
+            for d in get_marriages(wife_id, g)
+            if d.get("married") != current_married_value
+        ]
 
         common_children_birth_dates = get_common_children_birth_dates(
             husband_id, wife_id, g
         )
 
+        husband_born = get_born(husband_id, g)
+        wife_born = get_born(wife_id, g)
+
         validations = [
             (ctl.verify_marriage_divorce_date_order, (married, divorced)),
+            (ctl.verify_legal_marriage_age, (husband_born, married)),
+            (ctl.verify_legal_marriage_age, (wife_born, married)),
             (
                 ctl.validate_groom_and_bride_single_status,
                 (married, husband_marriages, wife_marriages),
@@ -60,15 +76,12 @@ def update_spouse_relation(g, data):
         result = perform_validations(validations)
         if result:
             return result
-        
-        updated_spouse_relation = (
-            g.E(marriage_id)
-            .property("married", married)
-            .property("divorced", divorced)
-            .next()
-        )
 
-        return jsonify(normalize_edge(updated_spouse_relation)), 201
+        g.E(marriage_id).property("married", married).property(
+            "divorced", divorced
+        ).iterate()
+
+        return "Marriage details updated successfully", 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
