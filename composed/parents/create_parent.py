@@ -79,9 +79,8 @@ def create_parent(g, data):
 
         parent = parent.as_("parent").V(child_id).addE("parent").from_("parent")
 
-        parent = parent.next()
+        parent = parent.select("parent").next()
 
-        # TO-DO: Return parent vertex instead of edge
         return normalize_vertex(parent), 201
 
     except Exception as e:

@@ -139,9 +139,8 @@ def create_spouse(g, data):
         for child_id in common_children:
             spouse = spouse.V(child_id).addE("parent").from_("spouse")
 
-        spouse = spouse.next()
+        spouse = spouse.select("spouse").next()
 
-        # TO-DO: Return spouse vertex
         return normalize_vertex(spouse), 201
 
     except Exception as e:

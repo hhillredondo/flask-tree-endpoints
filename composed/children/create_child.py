@@ -129,7 +129,7 @@ def create_child(g, data):
             spouse_id = potential_spouse.get(T.id)
             child.V(spouse_id).addE("parent").to("child")
 
-        child = child.next()
+        child = child.select("child").next()
 
         return normalize_vertex(child), 201
 
