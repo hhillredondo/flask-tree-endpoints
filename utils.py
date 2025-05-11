@@ -162,7 +162,7 @@ def get_marriage_id(husband_id: int, wife_id: int, g):
 
 
 def get_marriage_date(husband_id: int, wife_id: int, g):
-    marriage_id = (
+    marriage_date = (
         g.V(husband_id)
         .bothE("spouse")
         .where(__.otherV().hasId(wife_id))
@@ -170,4 +170,18 @@ def get_marriage_date(husband_id: int, wife_id: int, g):
         .next()
     )
 
-    return marriage_id
+    return marriage_date
+
+
+def get_divorce_date(husband_id: int, wife_id: int, g):
+    try:
+        divorced_date = (
+            g.V(husband_id)
+            .bothE("spouse")
+            .where(__.otherV().hasId(wife_id))
+            .values("divorced")
+            .next()
+        )
+        return divorced_date
+    except Exception:
+        return None

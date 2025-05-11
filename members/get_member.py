@@ -2,7 +2,7 @@ from flask import jsonify, request
 from gremlin_python.process.graph_traversal import __
 from gremlin_python.process.traversal import T
 
-from utils import normalize_vertex
+from utils import get_divorce_date, get_marriage_date, normalize_vertex
 
 
 def get_member_query(g, data):
@@ -77,6 +77,13 @@ def get_direct_relations_query(g, data):
                 normalize_vertex(spouse) for spouse in related_members.get("spouses")
             ],
         }
+
+        for spouse in related_members_data["spouses"]:
+            spouse_id = spouse["id"]
+            marriage_date = get_marriage_date(member_id, spouse_id, g)
+            divorce_date = get_divorce_date(member_id, spouse_id, g)
+            spouse["married"] = marriage_date
+            spouse["divorced"] = divorce_date
 
         return related_members_data, 200
 
