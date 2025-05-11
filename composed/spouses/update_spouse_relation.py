@@ -3,13 +3,12 @@ from utils import (
     get_born,
     get_common_children_birth_dates,
     get_marriage_date,
-    get_marriage_id,
     get_marriages,
-    normalize_edge,
 )
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
+from gremlin_python.process.graph_traversal import __
 
 
 def update_spouse_relation(g, data):
@@ -38,7 +37,6 @@ def update_spouse_relation(g, data):
         if not wife_exists:
             return jsonify({"error": error_msg}), 400
 
-        marriage_id = get_marriage_id(husband_id, wife_id, g)
         current_married_value = get_marriage_date(husband_id, wife_id, g)
 
         husband_marriages = [
@@ -77,9 +75,9 @@ def update_spouse_relation(g, data):
         if result:
             return result
 
-        g.E(marriage_id).property("married", married).property(
-            "divorced", divorced
-        ).iterate()
+        g.V(husband_id).bothE("spouse").where(__.otherV().hasId(wife_id)).property(
+            "married", married
+        ).property("divorced", divorced).iterate()
 
         return "Marriage details updated successfully", 201
 
