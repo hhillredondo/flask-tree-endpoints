@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify
 from utils import normalize_edge
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl

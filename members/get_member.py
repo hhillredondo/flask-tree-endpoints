@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify
 from gremlin_python.process.graph_traversal import __
 from gremlin_python.process.traversal import T
 
@@ -49,7 +49,6 @@ def get_direct_relations_query(g, data):
         if not g.V(member_id).hasNext():
             return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
 
-        # TO-DO: Include marriage & divorce dates in each spouse (get from edge)
         related_members_list = (
             g.V(member_id)
             .project("member", "parents", "children", "spouses")

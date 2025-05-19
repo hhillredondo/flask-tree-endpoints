@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import jsonify
 
 
 def delete_member_query(g, data):
