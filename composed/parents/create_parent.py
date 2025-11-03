@@ -4,6 +4,8 @@ from utils import get_born, get_parents_number, normalize_vertex
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
+from partition.query_helper import PartitionedQueryHelper
+from partition.middleware import get_current_partition
 
 
 def create_parent(g, data):
@@ -35,6 +37,11 @@ def create_parent(g, data):
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
 
+        # PARTITION VALIDATION: Ensure child_id is in the current partition
+        is_valid, error_response = PartitionedQueryHelper.validate_vertex_in_partition(g, child_id)
+        if not is_valid:
+            return error_response
+
         existing_parents = get_parents_number(child_id, g)
 
         validations = [
@@ -63,23 +70,42 @@ def create_parent(g, data):
         if result:
             return result
 
-        parent = (
-            g.addV("_Member")
-            .property("name", name)
-            .property("surname", surname)
-            .property("gender", gender)
-            .property("description", description)
-            .property("born", born)
-            .property("pic", pic)
-            .property("photos", photos)
+        # Get partition key from context
+        partition_key = get_current_partition()
+        if not partition_key:
+            return jsonify({"error": "No partition context"}), 400
+
+        # Build properties dict
+        properties = {
+            "name": name,
+            "surname": surname,
+            "gender": gender,
+            "description": description,
+            "born": born,
+            "pic": pic,
+            "photos": photos,
+        }
+        
+        if died:
+            properties["died"] = died
+
+        # Create parent vertex with partition key
+        parent = PartitionedQueryHelper.create_partitioned_vertex(
+            g=g,
+            label="_Member",
+            properties=properties,
+            partition_key=partition_key
         )
 
-        if died:
-            parent = parent.property("died", died)
-
-        parent = parent.as_("parent").V(child_id).addE("parent").from_("parent")
-
-        parent = parent.select("parent").next()
+        # Create parent-child relationship with partition key
+        PartitionedQueryHelper.create_partitioned_edge(
+            g=g,
+            from_vertex_id=parent.id,
+            to_vertex_id=child_id,
+            label="parent",
+            properties=None,
+            partition_key=partition_key
+        )
 
         return normalize_vertex(parent), 201
 

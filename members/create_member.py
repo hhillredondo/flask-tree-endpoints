@@ -3,6 +3,8 @@ from utils import normalize_vertex
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as vbl
 from validation.performValidations import perform_validations
+from partition.query_helper import PartitionedQueryHelper
+from partition.middleware import get_current_partition
 
 
 def create_member_query(g, data):
@@ -49,21 +51,37 @@ def create_member_query(g, data):
         if result:
             return result
 
-        new_member = (
-            g.addV("_Member")
-            .property("name", name)
-            .property("surname", surname)
-            .property("gender", gender)
-            .property("description", description)
-            .property("born", born)
-            .property("pic", pic)
-            .property("photos", photos)
-        )
-
+        # Build properties dict
+        properties = {
+            "name": name,
+            "surname": surname,
+            "gender": gender,
+            "description": description,
+            "born": born,
+            "pic": pic,
+            "photos": photos,
+        }
+        
         if died:
-            new_member = new_member.property("died", died)
+            properties["died"] = died
 
-        new_member = new_member.next()
+        # Check if we have partition context (for multi-tenant trees)
+        partition_key = get_current_partition()
+        
+        if partition_key:
+            # Use partitioned vertex creation
+            new_member = PartitionedQueryHelper.create_partitioned_vertex(
+                g=g,
+                label="_Member",
+                properties=properties,
+                partition_key=partition_key
+            )
+        else:
+            # Fallback to non-partitioned creation (for backward compatibility)
+            new_member = g.addV("_Member")
+            for key, value in properties.items():
+                new_member = new_member.property(key, value)
+            new_member = new_member.next()
 
         return normalize_vertex(new_member), 201
 

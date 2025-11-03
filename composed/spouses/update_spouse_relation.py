@@ -9,6 +9,7 @@ import validation.dataTypes as vdt
 import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
 from gremlin_python.process.graph_traversal import __
+from partition.query_helper import PartitionedQueryHelper
 
 
 def update_spouse_relation(g, data):
@@ -28,6 +29,13 @@ def update_spouse_relation(g, data):
 
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
+
+        # PARTITION VALIDATION: Ensure both husband_id and wife_id are in the current partition
+        is_valid, error_response = PartitionedQueryHelper.validate_vertices_in_partition(
+            g, [husband_id, wife_id]
+        )
+        if not is_valid:
+            return error_response
 
         husband_exists, error_msg = vdt.validate_vertex_exists(husband_id, "Source", g)
         if not husband_exists:

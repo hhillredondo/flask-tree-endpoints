@@ -1,0 +1,61 @@
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+
+class Config:
+    """Base configuration class"""
+    
+    # Flask settings
+    SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+    DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    
+    # Amplify/Cognito settings
+    AMPLIFY_USER_POOL_ID = os.getenv('AMPLIFY_USER_POOL_ID')
+    AWS_REGION = os.getenv('AWS_REGION', 'eu-central-1')
+    
+    # Gremlin/Neptune settings
+    GREMLIN_ENDPOINT = os.getenv('GREMLIN_ENDPOINT', 'localhost')
+    GREMLIN_PORT = int(os.getenv('GREMLIN_PORT', '8182'))
+    GREMLIN_SSL = os.getenv('GREMLIN_SSL', 'false').lower() == 'true'
+    
+    # CORS settings
+    CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173').split(',')
+    
+    # Logging
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+
+
+class DevelopmentConfig(Config):
+    """Development configuration"""
+    DEBUG = True
+    LOG_LEVEL = 'DEBUG'
+
+
+class ProductionConfig(Config):
+    """Production configuration"""
+    DEBUG = False
+    LOG_LEVEL = 'WARNING'
+
+
+class TestingConfig(Config):
+    """Testing configuration"""
+    TESTING = True
+    DEBUG = True
+
+
+# Configuration mapping
+config = {
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'testing': TestingConfig,
+    'default': DevelopmentConfig
+}
+
+
+def get_config():
+    """Get configuration based on environment"""
+    env = os.getenv('FLASK_ENV', 'development')
+    return config.get(env, config['default'])

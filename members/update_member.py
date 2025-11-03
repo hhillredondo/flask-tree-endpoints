@@ -3,6 +3,7 @@ from utils import normalize_vertex
 import validation.dataTypes as vdt
 import validation.coreTreeLogic as vbl
 from validation.performValidations import perform_validations
+from partition.middleware import get_current_partition
 
 
 def update_member_query(g, data):
@@ -14,8 +15,18 @@ def update_member_query(g, data):
         if not member_id:
             return jsonify({"error": "Missing 'id' field"}), 400
 
-        if not g.V(member_id).hasNext():
-            return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
+        # Get partition key from context
+        partition_key = get_current_partition()
+        
+        # Check if member exists in the current partition
+        if partition_key:
+            member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
+        else:
+            # Fallback for backward compatibility
+            member_exists = g.V(member_id).hasNext()
+        
+        if not member_exists:
+            return jsonify({"error": f"Member with ID {member_id} does not exist in this tree"}), 404
 
         name = data.get("name")
         surname = data.get("surname")

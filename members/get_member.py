@@ -3,6 +3,7 @@ from gremlin_python.process.graph_traversal import __
 from gremlin_python.process.traversal import T
 
 from utils import get_divorce_date, get_marriage_date, normalize_vertex
+from partition.middleware import get_current_partition
 
 
 def get_member_query(g, data):
@@ -15,10 +16,25 @@ def get_member_query(g, data):
         if not isinstance(member_id, int):
             return jsonify(f"Vertex id {member_id} is not a number")
 
-        if not g.V(member_id).hasNext():
-            return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
+        # Get partition key from context
+        partition_key = get_current_partition()
 
-        member = g.V(member_id).next()
+        # Check if member exists in the current partition
+        if partition_key:
+            member_traversal = g.V(member_id).has("_partitionKey", partition_key)
+        else:
+            # Fallback for backward compatibility
+            member_traversal = g.V(member_id)
+
+        if not member_traversal.hasNext():
+            return (
+                jsonify(
+                    {"error": f"Member with ID {member_id} does not exist in this tree"}
+                ),
+                404,
+            )
+
+        member = member_traversal.next()
 
         return normalize_vertex(member), 201
     except Exception as e:
@@ -27,7 +43,14 @@ def get_member_query(g, data):
 
 def get_all_members_query(g):
     try:
-        all_members = g.V().toList()
+        # Get partition key from context
+        partition_key = get_current_partition()
+
+        # Get members in current partition
+        if partition_key:
+            all_members = (
+                g.V().hasLabel("_Member").has("_partitionKey", partition_key).toList()
+            )
 
         normalized_members = [normalize_vertex(member) for member in all_members]
 
@@ -46,8 +69,20 @@ def get_direct_relations_query(g, data):
         if not isinstance(member_id, int):
             return jsonify({"error": f"Vertex id {member_id} is not a number"}), 400
 
-        if not g.V(member_id).hasNext():
-            return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
+        # Get partition key from context
+        partition_key = get_current_partition()
+
+        # Check if member exists in the current partition
+        if partition_key:
+            member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
+
+        if not member_exists:
+            return (
+                jsonify(
+                    {"error": f"Member with ID {member_id} does not exist in this tree"}
+                ),
+                404,
+            )
 
         related_members_list = (
             g.V(member_id)

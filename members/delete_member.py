@@ -1,4 +1,5 @@
 from flask import jsonify
+from partition.middleware import get_current_partition
 
 
 def delete_member_query(g, data):
@@ -12,10 +13,24 @@ def delete_member_query(g, data):
         if not isinstance(member_id, int):
             return jsonify(f"Vertex id {member_id} is not a number")
 
-        if not g.V(member_id).hasNext():
-            return jsonify({"error": f"Member with ID {member_id} does not exist"}), 404
+        # Get partition key from context
+        partition_key = get_current_partition()
+        
+        # Check if member exists in the current partition
+        if partition_key:
+            member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
+        else:
+            # Fallback for backward compatibility
+            member_exists = g.V(member_id).hasNext()
+        
+        if not member_exists:
+            return jsonify({"error": f"Member with ID {member_id} does not exist in this tree"}), 404
 
-        edge_count = g.V(member_id).bothE().count().next()
+        # Count edges (only in current partition if partition_key exists)
+        if partition_key:
+            edge_count = g.V(member_id).bothE().has("_partitionKey", partition_key).count().next()
+        else:
+            edge_count = g.V(member_id).bothE().count().next()
 
         if edge_count >= 2:
             return (
