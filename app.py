@@ -255,7 +255,9 @@ def internal_error(error):
 
 
 if __name__ == "__main__":
-    logger.info("Starting Flask application...")
+    # This only runs when using Flask's dev server (python app.py)
+    # Gunicorn imports app directly, so this won't run in production
+    logger.info("Starting Flask application (development mode)...")
     logger.info(f"Environment: {app.config.get('FLASK_ENV', 'development')}")
     logger.info(f"Debug mode: {app.config.get('DEBUG', False)}")
     logger.info(f"CORS origins: {app.config.get('CORS_ORIGINS', [])}")
@@ -265,3 +267,6 @@ if __name__ == "__main__":
         port=5000,
         debug=app.config.get('DEBUG', False)
     )
+else:
+    # This runs when imported by Gunicorn
+    logger.info("Flask app loaded by Gunicorn (production mode)")
