@@ -1,7 +1,6 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -22,4 +21,4 @@ USER appuser
 EXPOSE 5000
 
 # Health check for ECS/Fargate
-HEALTHCHECK --interval=30s --timeout
+HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/health || exit 1
