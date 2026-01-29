@@ -3,6 +3,7 @@ from auth.utils import get_current_user_id
 from partition.manager import partition_manager
 from partition.middleware import set_partition_context
 from members.create_member import create_member_query
+from roles.acl_store import ROLE_OWNER, acl_store
 
 
 def create_tree(g, data):
@@ -39,6 +40,10 @@ def create_tree(g, data):
         
         # Set partition context so create_member_query can use it
         set_partition_context(partition_key, user_id, tree_id)
+
+        # Seed ACL: creator is owner
+        if not acl_store.put_role(tree_id, user_id, ROLE_OWNER):
+            return jsonify({"error": "Failed to assign owner role"}), 500
         
         # Create the first member using the existing create_member_query
         # This will run all the important validations

@@ -30,6 +30,13 @@ def get_current_partition() -> Optional[str]:
     return None
 
 
+def get_current_tree_id() -> Optional[str]:
+    """Get current tree_id from Flask g context"""
+    if hasattr(g, 'partition_context'):
+        return g.partition_context.tree_id
+    return None
+
+
 def extract_partition_from_request() -> str:
     partition_key = request.headers.get('X-Partition-Key')
     if not partition_key:
@@ -43,9 +50,6 @@ def validate_partition_access(partition_key: str, user_id: str) -> bool:
         return False
     
     if not partition_manager.validate_partition_key(partition_key):
-        return False
-    
-    if not partition_manager.user_owns_partition(user_id, partition_key):
         return False
     
     return True

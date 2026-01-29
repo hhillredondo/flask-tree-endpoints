@@ -19,6 +19,9 @@ from relations.create_relation import create_relation_query
 from auth.decorators import auth_required
 from auth.utils import get_current_user_id, get_current_user_info
 from partition.middleware import require_partition, get_current_partition
+from roles.acl_store import ROLE_OWNER
+from roles.handlers import list_roles, add_role, remove_role
+from roles.middleware import require_role
 from config.settings import get_config
 import logging
 
@@ -126,6 +129,7 @@ def create_new_tree():
 @app.route("/member", methods=["POST", "GET", "PUT", "DELETE"])
 @auth_required
 @require_partition
+@require_role()
 def member():
     """Member CRUD operations - requires partition_key in header"""
     data = request.get_json()
@@ -146,6 +150,7 @@ def member():
 @app.route("/members", methods=["GET"])
 @auth_required
 @require_partition
+@require_role()
 def get_members():
     """Get all members - requires partition_key in header"""
     user_id = get_current_user_id()
@@ -157,6 +162,7 @@ def get_members():
 @app.route("/memberDirectRelations", methods=["GET"])
 @auth_required
 @require_partition
+@require_role()
 def get_direct_relations():
     """Get direct relations for a member - requires partition_key in header"""
     data = request.get_json()
@@ -169,6 +175,7 @@ def get_direct_relations():
 @app.route("/relation", methods=["POST"])
 @auth_required
 @require_partition
+@require_role()
 def create_relation():
     """Create a relation - requires partition_key in header"""
     data = request.get_json()
@@ -181,6 +188,7 @@ def create_relation():
 @app.route("/child", methods=["POST"])
 @auth_required
 @require_partition
+@require_role()
 def child():
     """Create child relationship - requires partition_key in header"""
     data = request.get_json()
@@ -193,6 +201,7 @@ def child():
 @app.route("/parent", methods=["POST"])
 @auth_required
 @require_partition
+@require_role()
 def parent():
     """Create parent relationship - requires partition_key in header"""
     data = request.get_json()
@@ -205,6 +214,7 @@ def parent():
 @app.route("/spouse", methods=["POST", "PUT"])
 @auth_required
 @require_partition
+@require_role()
 def spouse():
     """Spouse relationship operations - requires partition_key in header"""
     data = request.get_json()
@@ -215,6 +225,33 @@ def spouse():
         return create_spouse(g, data)
     elif request.method == "PUT":
         return update_spouse_relation(g, data)
+
+
+@app.route("/roles", methods=["GET"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER])
+def get_roles():
+    """List roles for a tree (owner-only)."""
+    return list_roles()
+
+
+@app.route("/roles", methods=["POST"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER])
+def create_role():
+    """Owner adds editor/viewer role to a user."""
+    return add_role()
+
+
+@app.route("/roles", methods=["DELETE"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER])
+def delete_role():
+    """Owner removes editor/viewer role from a user."""
+    return remove_role()
 
 
 @app.errorhandler(401)

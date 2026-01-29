@@ -15,6 +15,10 @@ class Config:
     # Amplify/Cognito settings
     AMPLIFY_USER_POOL_ID = os.getenv('AMPLIFY_USER_POOL_ID')
     AWS_REGION = os.getenv('AWS_REGION', 'eu-central-1')
+
+    # ACL/DynamoDB settings
+    ACL_TABLE_NAME = os.getenv('ACL_TABLE_NAME', 'TreeAcl')
+    ROLE_CACHE_TTL_SECONDS = int(os.getenv('ROLE_CACHE_TTL_SECONDS', '30'))
     
     # Gremlin/Neptune settings
     GREMLIN_ENDPOINT = os.getenv('GREMLIN_ENDPOINT', 'localhost')

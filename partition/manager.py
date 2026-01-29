@@ -1,9 +1,6 @@
 import uuid
 import re
 from typing import Optional, Tuple
-from flask import current_app, g
-from auth.utils import get_current_user_id
-
 
 class PartitionManager:
     """Manages partition keys for multi-tenant tree isolation"""
