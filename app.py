@@ -5,6 +5,7 @@ from composed.parents.create_parent import create_parent
 from composed.spouses.update_spouse_relation import update_spouse_relation
 from composed.spouses.create_spouse import create_spouse
 from composed.trees.create_tree import create_tree
+from composed.trees.delete_tree import delete_tree
 from composed.trees.list_trees import list_user_trees
 from gremlin_connection import create_gremlin_connection
 from members.create_member import create_member_query
@@ -23,6 +24,7 @@ from roles.acl_store import ROLE_OWNER
 from roles.handlers import list_roles, add_role, remove_role
 from roles.middleware import require_role
 from config.settings import get_config
+from metrics import snapshot
 import logging
 import os
 
@@ -134,6 +136,32 @@ def create_new_tree():
     except Exception as e:
         logger.error(f"Error creating tree: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+# Owner-only destructive op: delete entire tree by partition
+@app.route("/trees", methods=["DELETE"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER])
+def delete_existing_tree():
+    """Delete a tree (owner-only, requires partition_key header)."""
+    try:
+        data = request.get_json() or {}
+        user_id = get_current_user_id()
+        partition_key = get_current_partition()
+        logger.info(f"Delete tree by user {user_id} (partition: {partition_key})")
+        return delete_tree(g, data)
+    except Exception as e:
+        logger.error(f"Error deleting tree: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# Metrics endpoint (auth-required)
+@app.route("/metrics", methods=["GET"])
+@auth_required
+def get_metrics():
+    """Return in-memory auth/role metrics."""
+    return jsonify({"metrics": snapshot()}), 200
 
 
 # Partitioned Endpoints (require partition_key in header)

@@ -1,5 +1,6 @@
 from functools import wraps
 from flask import request, g, jsonify, current_app
+from metrics import increment
 from .utils import auth_utils
 
 
@@ -26,6 +27,7 @@ def authenticate_request():
         
         if not token:
             current_app.logger.warning("No authorization token provided")
+            increment("auth_failure", {"reason": "missing_token"})
             return False, "No authorization token provided"
         
         # Validate token
@@ -33,6 +35,7 @@ def authenticate_request():
         
         if not payload:
             current_app.logger.warning("Invalid or expired token")
+            increment("auth_failure", {"reason": "invalid_token"})
             return False, "Invalid or expired token"
         
         # Extract user information
@@ -46,6 +49,7 @@ def authenticate_request():
         
     except Exception as e:
         current_app.logger.error(f"Authentication error: {e}")
+        increment("auth_failure", {"reason": "exception"})
         return False, "Authentication failed"
 
 

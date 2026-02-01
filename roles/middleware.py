@@ -7,6 +7,7 @@ from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
 from .acl_store import ROLE_EDITOR, ROLE_OWNER, ROLE_VIEWER
 from .service import get_user_role
+from metrics import increment
 
 _READ_METHODS = {"GET", "HEAD", "OPTIONS"}
 _WRITE_METHODS = {"POST", "PUT", "PATCH"}
@@ -48,18 +49,31 @@ def require_role(required_roles: Optional[Iterable[str]] = None):
                 current_app.logger.warning(
                     f"No ACL entry for user {user_id} on tree {tree_id}"
                 )
+                increment("auth_failure", {"reason": "missing_role"})
                 return jsonify({
                     "error": "Access denied",
                     "message": "You do not have access to this tree"
                 }), 403
 
             if role not in allowed_roles:
+                increment("auth_failure", {"reason": "role_denied", "role": role})
                 return jsonify({
                     "error": "Access denied",
                     "message": "Insufficient role for this operation",
                     "role": role
                 }), 403
 
+            current_app.logger.info(
+                "Role allowed",
+                extra={
+                    "user_id": user_id,
+                    "tree_id": tree_id,
+                    "role": role,
+                    "allowed_roles": sorted(allowed_roles),
+                    "method": request.method,
+                    "path": request.path,
+                },
+            )
             g.current_role = role
             return f(*args, **kwargs)
 
