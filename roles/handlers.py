@@ -103,6 +103,11 @@ def remove_role():
 
         if not target_user_id and email:
             target_user_id = get_user_sub_by_email(email)
+            if not target_user_id:
+                return jsonify({
+                    "error": "User not found",
+                    "message": "No Cognito user found for this email"
+                }), 404
 
         if not target_user_id:
             return jsonify({
