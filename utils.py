@@ -1,23 +1,59 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from gremlin_python.process.graph_traversal import __, elementMap, otherV
+from gremlin_python.process.traversal import T
 
 
 fmt = "%Y-%m-%dT%H:%M:%SZ"
 
 
+def _coerce_vertex_property_value(value):
+    if isinstance(value, list):
+        if len(value) == 1:
+            return value[0]
+        return value
+    if isinstance(value, dict) and "value" in value:
+        return value.get("value")
+    return value
+
+
 def normalize_vertex(vertex):
     try:
+        if vertex is None:
+            return None
+
+        if isinstance(vertex, dict):
+            normalized_data = {}
+            if "id" in vertex:
+                normalized_data["id"] = str(vertex.get("id"))
+            elif T.id in vertex:
+                normalized_data["id"] = str(vertex.get(T.id))
+
+            if "label" in vertex:
+                normalized_data["label"] = vertex.get("label")
+            elif T.label in vertex:
+                normalized_data["label"] = vertex.get(T.label)
+
+            for key, value in vertex.items():
+                if key in ("id", "label", T.id, T.label):
+                    continue
+                normalized_data[str(key)] = _coerce_vertex_property_value(value)
+            return normalized_data
+
         normalized_data = {
             "id": str(vertex.id),
             "label": vertex.label,
         }
 
         properties = {}
-        for prop in vertex.properties:
-            key = prop.key
-            value = prop.value
-            properties[key] = value
+        properties_iter = getattr(vertex, "properties", None)
+        if properties_iter:
+            for prop in properties_iter:
+                key = getattr(prop, "key", None)
+                value = getattr(prop, "value", None)
+                if key is None:
+                    continue
+                properties[key] = value
 
         normalized_data.update(properties)
         return normalized_data

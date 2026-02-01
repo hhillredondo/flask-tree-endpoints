@@ -24,6 +24,7 @@ from roles.handlers import list_roles, add_role, remove_role
 from roles.middleware import require_role
 from config.settings import get_config
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -54,11 +55,21 @@ def health_check():
             "vertex_count": vertex_count
         }), 200
     except Exception as e:
-        logger.error(f"Health check failed: {e}")
+        logger.exception("Health check failed")
+        debug_info = {
+            "gremlin_endpoint": os.getenv("GREMLIN_ENDPOINT"),
+            "gremlin_port": os.getenv("GREMLIN_PORT"),
+            "gremlin_ssl": os.getenv("GREMLIN_SSL"),
+            "gremlin_iam_auth": os.getenv("GREMLIN_IAM_AUTH"),
+            "aws_region": os.getenv("AWS_REGION"),
+            "aws_default_region": os.getenv("AWS_DEFAULT_REGION"),
+        }
         return jsonify({
             "status": "unhealthy",
             "message": "Flask API is running but Gremlin connection failed",
-            "error": str(e)
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "debug": debug_info
         }), 500
 
 
