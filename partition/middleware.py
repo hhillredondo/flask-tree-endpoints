@@ -68,7 +68,13 @@ def require_partition(f):
             }), 401
         
         # Extract partition key from request
-        partition_key = extract_partition_from_request()
+        try:
+            partition_key = extract_partition_from_request()
+        except ValueError as exc:
+            return jsonify({
+                'error': 'Partition required',
+                'message': str(exc)
+            }), 400
         
         if not partition_key:
             return jsonify({
