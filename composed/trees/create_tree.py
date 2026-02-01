@@ -37,6 +37,14 @@ def create_tree(g, data):
         
         # Generate partition key using Amplify tree ID
         partition_key = partition_manager.generate_partition_key(user_id, tree_id)
+
+        # Guard: prevent reusing an existing partition key in Neptune
+        if g.V().has("_partitionKey", partition_key).hasNext():
+            return jsonify({
+                "error": "Tree already initialized",
+                "message": "Partition key already exists in Neptune for this tree",
+                "partition_key": partition_key
+            }), 409
         
         # Set partition context so create_member_query can use it
         set_partition_context(partition_key, user_id, tree_id)
