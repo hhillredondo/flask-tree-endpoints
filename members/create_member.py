@@ -46,6 +46,7 @@ def create_member_query(g, data):
         if died:
             validations.append((vdt.validate_date_format, (died,)))
             validations.append((vbl.validate_life_date_order, (born, died)))
+            validations.append((vbl.validate_max_lifespan, (born, died)))
 
         result = perform_validations(validations)
         if result:

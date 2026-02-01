@@ -17,6 +17,17 @@ def validate_life_date_order(born, died):
         return False, f"Invalid date format: {str(e)}"
 
 
+def validate_max_lifespan(born, died, max_years: int = 120):
+    try:
+        born_date = datetime.strptime(born, fmt)
+        died_date = datetime.strptime(died, fmt)
+        if died_date > born_date + relativedelta(years=max_years):
+            return False, "Humans cannot live that long"
+        return True, ""
+    except ValueError as e:
+        return False, f"Invalid date format: {str(e)}"
+
+
 def validate_parents_number(number_of_parents):
     if number_of_parents == 1:
         return (

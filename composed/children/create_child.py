@@ -66,6 +66,7 @@ def create_child(g, data):
         if died:
             validations.append((vdt.validate_date_format, (died,)))
             validations.append((ctl.validate_life_date_order, (born, died)))
+            validations.append((ctl.validate_max_lifespan, (born, died)))
 
         parent_gender = get_gender(parent_id, g)
         parent_born = get_born(parent_id, g)

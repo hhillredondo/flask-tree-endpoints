@@ -70,6 +70,7 @@ def create_spouse(g, data):
         if died:
             validations.append((vdt.validate_date_format, (died,)))
             validations.append((ctl.validate_life_date_order, (born, died)))
+            validations.append((ctl.validate_max_lifespan, (born, died)))
 
         spouse_gender = get_gender(spouse_id, g)
         validations.append(

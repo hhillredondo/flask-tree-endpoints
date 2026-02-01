@@ -15,6 +15,12 @@ def update_member_query(g, data):
         if not member_id:
             return jsonify({"error": "Missing 'id' field"}), 400
 
+        if "born" in data or "died" in data:
+            return jsonify({
+                "error": "Immutable fields",
+                "message": "born and died cannot be modified"
+            }), 400
+
         # Get partition key from context
         partition_key = get_current_partition()
         
