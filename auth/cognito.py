@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, BotoCoreError
 from flask import current_app
 
 _client = None
@@ -37,8 +37,11 @@ def get_user_sub_by_email(email: str) -> Optional[str]:
             if attr.get("Name") == "sub":
                 return attr.get("Value")
         return None
-    except ClientError as exc:
+    except (ClientError, BotoCoreError) as exc:
         current_app.logger.error(f"Cognito lookup failed for {email}: {exc}")
+        return None
+    except Exception as exc:
+        current_app.logger.exception(f"Unexpected Cognito error for {email}: {exc}")
         return None
 
 

@@ -4,14 +4,14 @@ from partition.middleware import get_current_partition
 
 def delete_member_query(g, data):
     try:
-        member_id = data.get("member_id")
-        print("deleting member with id: ", member_id)
-
         if data is None:
             return jsonify({"error": "No JSON data provided"}), 400
 
-        if not isinstance(member_id, int):
-            return jsonify(f"Vertex id {member_id} is not a number")
+        member_id = data.get("member_id")
+        print("deleting member with id: ", member_id)
+
+        if member_id is None or (isinstance(member_id, str) and not member_id.strip()):
+            return jsonify({"error": "Member id is required"}), 400
 
         # Get partition key from context
         partition_key = get_current_partition()

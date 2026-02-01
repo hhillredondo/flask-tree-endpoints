@@ -103,8 +103,8 @@ def validate_relation_type(relation_type: str):
 def validate_vertex_exists(
     vertex_id: int, source_or_target: Literal["Source", "Target"], g
 ):
-    if not isinstance(vertex_id, int):
-        return False, f"Vertex id of {source_or_target} is not a number"
+    if vertex_id is None or (isinstance(vertex_id, str) and not vertex_id.strip()):
+        return False, f"{source_or_target} vertex id is required"
     if not g.V(vertex_id).hasNext():
         return False, f"{source_or_target} vertex not found!"
     return True, ""

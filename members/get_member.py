@@ -12,19 +12,20 @@ def get_member_query(g, data):
             return jsonify({"error": "No JSON data provided"}), 400
 
         member_id = data.get("id")
-
-        if not isinstance(member_id, int):
-            return jsonify(f"Vertex id {member_id} is not a number")
+        if member_id is None or (isinstance(member_id, str) and not member_id.strip()):
+            return jsonify({"error": "Member id is required"}), 400
 
         # Get partition key from context
         partition_key = get_current_partition()
 
         # Check if member exists in the current partition
         if partition_key:
-            member_traversal = g.V(member_id).has("_partitionKey", partition_key)
+            member_traversal = (
+                g.V(member_id).has("_partitionKey", partition_key).elementMap()
+            )
         else:
             # Fallback for backward compatibility
-            member_traversal = g.V(member_id)
+            member_traversal = g.V(member_id).elementMap()
 
         if not member_traversal.hasNext():
             return (
@@ -49,7 +50,11 @@ def get_all_members_query(g):
         # Get members in current partition
         if partition_key:
             all_members = (
-                g.V().hasLabel("_Member").has("_partitionKey", partition_key).toList()
+                g.V()
+                .hasLabel("_Member")
+                .has("_partitionKey", partition_key)
+                .elementMap()
+                .toList()
             )
 
         normalized_members = [normalize_vertex(member) for member in all_members]
@@ -65,9 +70,8 @@ def get_direct_relations_query(g, data):
             return jsonify({"error": "No JSON data provided"}), 400
 
         member_id = data.get("id")
-
-        if not isinstance(member_id, int):
-            return jsonify({"error": f"Vertex id {member_id} is not a number"}), 400
+        if member_id is None or (isinstance(member_id, str) and not member_id.strip()):
+            return jsonify({"error": "Member id is required"}), 400
 
         # Get partition key from context
         partition_key = get_current_partition()
@@ -87,10 +91,10 @@ def get_direct_relations_query(g, data):
         related_members_list = (
             g.V(member_id)
             .project("member", "parents", "children", "spouses")
-            .by(__.identity())
-            .by(__.inE("parent").outV().dedup().fold())
-            .by(__.outE("parent").inV().dedup().fold())
-            .by(__.bothE("spouse").otherV().dedup().fold())
+            .by(__.elementMap())
+            .by(__.inE("parent").outV().elementMap().dedup().fold())
+            .by(__.outE("parent").inV().elementMap().dedup().fold())
+            .by(__.bothE("spouse").otherV().elementMap().dedup().fold())
             .toList()
         )
 
