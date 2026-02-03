@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 from flask import current_app
 
@@ -89,6 +89,16 @@ class AclStore:
             return response.get("Items", [])
         except ClientError as exc:
             current_app.logger.error(f"ACL list_roles failed: {exc}")
+            return []
+
+    def list_roles_for_user(self, user_id: str) -> List[Dict[str, str]]:
+        try:
+            response = self.table.scan(
+                FilterExpression=Attr("userId").eq(user_id)
+            )
+            return response.get("Items", [])
+        except ClientError as exc:
+            current_app.logger.error(f"ACL list_roles_for_user failed: {exc}")
             return []
 
 

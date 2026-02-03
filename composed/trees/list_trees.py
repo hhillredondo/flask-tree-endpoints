@@ -1,20 +1,58 @@
 from flask import jsonify
 from auth.utils import get_current_user_id
 from partition.manager import partition_manager
+from roles.acl_store import acl_store, ROLE_OWNER
 
 
 def list_user_trees(g):
     """
-    List all trees for the current authenticated user
-    
-    Scans all members and groups by partition key to find unique trees.
-    Tree metadata (name, description) should be fetched from Amplify DynamoDB.
-    
-    Args:
-        g: Gremlin traversal source
-        
-    Returns:
-        List of user's trees with partition keys and basic stats
+    List all trees the current user can access (owner/editor/viewer).
+    """
+    try:
+        user_id = get_current_user_id()
+        if not user_id:
+            return jsonify({"error": "User not authenticated"}), 401
+
+        all_members = g.V().hasLabel("_Member").has("_partitionKey").elementMap().toList()
+        member_counts = {}
+        for member_data in all_members:
+            partition_key = member_data.get("_partitionKey")
+            if not partition_key:
+                continue
+            _, tree_id = partition_manager.parse_partition_key(partition_key)
+            if not tree_id:
+                continue
+            member_counts[tree_id] = member_counts.get(tree_id, 0) + 1
+
+        roles = acl_store.list_roles_for_user(user_id)
+        trees = []
+
+        for entry in roles:
+            tree_id = entry.get("treeId")
+            role = entry.get("role")
+            partition_key = None
+
+            if role == ROLE_OWNER and tree_id:
+                partition_key = partition_manager.generate_partition_key(user_id, tree_id)
+
+            trees.append({
+                "tree_id": tree_id,
+                "role": role,
+                "partition_key": partition_key,
+                "member_count": member_counts.get(tree_id, 0)
+            })
+
+        return jsonify({
+            "trees": trees,
+            "count": len(trees)
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def list_owned_trees(g):
+    """
+    List trees owned by the current user (legacy /myTrees behavior).
     """
     try:
         # Get current user

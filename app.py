@@ -6,7 +6,7 @@ from composed.spouses.update_spouse_relation import update_spouse_relation
 from composed.spouses.create_spouse import create_spouse
 from composed.trees.create_tree import create_tree
 from composed.trees.delete_tree import delete_tree
-from composed.trees.list_trees import list_user_trees
+from composed.trees.list_trees import list_user_trees, list_owned_trees
 from gremlin_connection import create_gremlin_connection
 from members.create_member import create_member_query
 from members.update_member import update_member_query
@@ -20,9 +20,16 @@ from relations.create_relation import create_relation_query
 from auth.decorators import auth_required
 from auth.utils import get_current_user_id, get_current_user_info
 from partition.middleware import require_partition, get_current_partition
-from roles.acl_store import ROLE_OWNER
+from roles.acl_store import ROLE_OWNER, ROLE_EDITOR
 from roles.handlers import list_roles, add_role, remove_role
 from roles.middleware import require_role
+from editor_lock.handlers import (
+    get_lock_status,
+    acquire_lock,
+    release_lock,
+    force_release_lock,
+)
+from editor_lock.middleware import require_editor_lock
 from config.settings import get_config
 from metrics import snapshot
 import logging
@@ -114,13 +121,26 @@ def get_current_user():
 @app.route("/trees", methods=["GET"])
 @auth_required
 def get_user_trees():
-    """Get all trees for the current user"""
+    """Get all trees for the current user (owner/editor/viewer)."""
     try:
         user_id = get_current_user_id()
         logger.info(f"Get user trees for user {user_id}")
         return list_user_trees(g)
     except Exception as e:
         logger.error(f"Error getting user trees: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/myTrees", methods=["GET"])
+@auth_required
+def get_owned_trees():
+    """Get trees owned by the current user (legacy behavior)."""
+    try:
+        user_id = get_current_user_id()
+        logger.info(f"Get owned trees for user {user_id}")
+        return list_owned_trees(g)
+    except Exception as e:
+        logger.error(f"Error getting owned trees: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -169,6 +189,7 @@ def get_metrics():
 @auth_required
 @require_partition
 @require_role()
+@require_editor_lock
 def member():
     """Member CRUD operations - requires partition_key in header"""
     data = request.get_json()
@@ -215,6 +236,7 @@ def get_direct_relations():
 @auth_required
 @require_partition
 @require_role()
+@require_editor_lock
 def create_relation():
     """Create a relation - requires partition_key in header"""
     data = request.get_json()
@@ -228,6 +250,7 @@ def create_relation():
 @auth_required
 @require_partition
 @require_role()
+@require_editor_lock
 def child():
     """Create child relationship - requires partition_key in header"""
     data = request.get_json()
@@ -241,6 +264,7 @@ def child():
 @auth_required
 @require_partition
 @require_role()
+@require_editor_lock
 def parent():
     """Create parent relationship - requires partition_key in header"""
     data = request.get_json()
@@ -254,6 +278,7 @@ def parent():
 @auth_required
 @require_partition
 @require_role()
+@require_editor_lock
 def spouse():
     """Spouse relationship operations - requires partition_key in header"""
     data = request.get_json()
@@ -291,6 +316,42 @@ def create_role():
 def delete_role():
     """Owner removes editor/viewer role from a user."""
     return remove_role()
+
+
+@app.route("/editor-lock", methods=["GET"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER, ROLE_EDITOR])
+def get_editor_lock_status():
+    """Get current editor lock status for a tree."""
+    return get_lock_status()
+
+
+@app.route("/editor-lock", methods=["POST"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER, ROLE_EDITOR])
+def acquire_editor_lock():
+    """Acquire editor lock for a tree."""
+    return acquire_lock()
+
+
+@app.route("/editor-lock", methods=["DELETE"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER, ROLE_EDITOR])
+def release_editor_lock():
+    """Release editor lock for a tree."""
+    return release_lock()
+
+
+@app.route("/editor-lock/force", methods=["POST"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_OWNER])
+def force_release_editor_lock():
+    """Owner-only force release editor lock for a tree."""
+    return force_release_lock()
 
 
 @app.errorhandler(401)
