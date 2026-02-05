@@ -63,9 +63,9 @@ def _validate_url(url):
         result = urlparse(url)
         # Check for scheme and netloc
         if all([result.scheme, result.netloc]):
-            # Additional check for allowed schemes (http, https, ftp)
-            if result.scheme not in ["http", "https", "ftp"]:
-                return False, "URL must start with http://, https://, or ftp://"
+            # Additional check for allowed schemes (http, https, ftp, s3)
+            if result.scheme not in ["http", "https", "ftp", "s3"]:
+                return False, "URL must start with http://, https://, ftp://, or s3://"
             # Check for valid characters in the URL
             if not re.match(
                 r"^[a-zA-Z0-9\-\.\_\~\:\/\?\#\[\]\@\!\$\&\'\(\)\*\+\,\;\=\%]+$", url

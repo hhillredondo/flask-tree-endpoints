@@ -10,6 +10,12 @@ from composed.trees.list_trees import list_user_trees, list_owned_trees
 from gremlin_connection import create_gremlin_connection
 from members.create_member import create_member_query
 from members.update_member import update_member_query
+from members.upload_member_media import (
+    upload_member_pic,
+    upload_member_photos,
+    get_member_pic_url,
+    get_member_photo_urls,
+)
 from members.get_member import (
     get_direct_relations_query,
     get_member_query,
@@ -56,12 +62,11 @@ def health_check():
     """Health check endpoint - no authentication required"""
     try:
         # Test Gremlin connection
-        vertex_count = g.V().count().next()
+        g.V().limit(1).toList()
         return jsonify({
             "status": "healthy",
             "message": "Flask API is running",
-            "gremlin_connection": "connected",
-            "vertex_count": vertex_count
+            "gremlin_connection": "connected"
         }), 200
     except Exception as e:
         logger.exception("Health check failed")
@@ -205,6 +210,44 @@ def member():
         return get_member_query(g, data)
     elif request.method == "PUT":
         return update_member_query(g, data)
+
+
+@app.route("/member/pic", methods=["POST"])
+@auth_required
+@require_partition
+@require_role()
+@require_editor_lock
+def upload_member_pic_route():
+    """Upload and store a member profile pic (24x24px)."""
+    return upload_member_pic(g, request)
+
+
+@app.route("/member/photos", methods=["POST"])
+@auth_required
+@require_partition
+@require_role()
+@require_editor_lock
+def upload_member_photos_route():
+    """Upload and store member photos (original size)."""
+    return upload_member_photos(g, request)
+
+
+@app.route("/member/pic-url", methods=["GET"])
+@auth_required
+@require_partition
+@require_role()
+def get_member_pic_url_route():
+    """Get a presigned URL for a member profile pic."""
+    return get_member_pic_url(g, request)
+
+
+@app.route("/member/photos-urls", methods=["GET"])
+@auth_required
+@require_partition
+@require_role()
+def get_member_photo_urls_route():
+    """Get presigned URLs for a member's photos."""
+    return get_member_photo_urls(g, request)
 
 
 @app.route("/members", methods=["GET"])

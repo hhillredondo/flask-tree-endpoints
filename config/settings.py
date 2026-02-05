@@ -33,6 +33,13 @@ class Config:
     # Logging
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 
+    # S3 media storage
+    S3_MEDIA_BUCKET = os.getenv('S3_MEDIA_BUCKET')
+    S3_MEDIA_PREFIX = os.getenv('S3_MEDIA_PREFIX', 'trees')
+    S3_PUBLIC_BASE_URL = os.getenv('S3_PUBLIC_BASE_URL')
+    S3_PIC_SIZE = int(os.getenv('S3_PIC_SIZE', '24'))
+    S3_PRESIGNED_TTL_SECONDS = int(os.getenv('S3_PRESIGNED_TTL_SECONDS', '3600'))
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""
