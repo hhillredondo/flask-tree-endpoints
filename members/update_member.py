@@ -21,16 +21,11 @@ def update_member_query(g, data):
                 "message": "born and died cannot be modified"
             }), 400
 
-        # Get partition key from context
         partition_key = get_current_partition()
-        
-        # Check if member exists in the current partition
-        if partition_key:
-            member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
-        else:
-            # Fallback for backward compatibility
-            member_exists = g.V(member_id).hasNext()
-        
+        if not partition_key:
+            return jsonify({"error": "Partition key is required"}), 400
+
+        member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
         if not member_exists:
             return jsonify({"error": f"Member with ID {member_id} does not exist in this tree"}), 404
 

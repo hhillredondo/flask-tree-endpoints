@@ -91,3 +91,20 @@ def list_objects(bucket, prefix):
     except ClientError as exc:
         raise RuntimeError(f"Failed to list S3 objects: {exc}") from exc
 
+
+def delete_prefix(bucket, prefix):
+    s3_client = get_s3_client()
+    paginator = s3_client.get_paginator("list_objects_v2")
+    try:
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+            objects = [{"Key": obj.get("Key")} for obj in page.get("Contents", []) if obj.get("Key")]
+            if not objects:
+                continue
+            for i in range(0, len(objects), 1000):
+                s3_client.delete_objects(
+                    Bucket=bucket,
+                    Delete={"Objects": objects[i:i + 1000]},
+                )
+    except ClientError as exc:
+        raise RuntimeError(f"Failed to delete S3 objects: {exc}") from exc
+

@@ -91,6 +91,24 @@ class AclStore:
             current_app.logger.error(f"ACL list_roles failed: {exc}")
             return []
 
+    def delete_roles_for_tree(self, tree_id: str) -> bool:
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key("treeId").eq(tree_id)
+            )
+            items = response.get("Items", [])
+            if not items:
+                return True
+            with self.table.batch_writer() as batch:
+                for item in items:
+                    user_id = item.get("userId")
+                    if user_id:
+                        batch.delete_item(Key={"treeId": tree_id, "userId": user_id})
+            return True
+        except ClientError as exc:
+            current_app.logger.error(f"ACL delete_roles_for_tree failed: {exc}")
+            return False
+
     def list_roles_for_user(self, user_id: str) -> List[Dict[str, str]]:
         try:
             response = self.table.scan(

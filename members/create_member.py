@@ -66,23 +66,16 @@ def create_member_query(g, data):
         if died:
             properties["died"] = died
 
-        # Check if we have partition context (for multi-tenant trees)
         partition_key = get_current_partition()
-        
-        if partition_key:
-            # Use partitioned vertex creation
-            new_member = PartitionedQueryHelper.create_partitioned_vertex(
-                g=g,
-                label="_Member",
-                properties=properties,
-                partition_key=partition_key
-            )
-        else:
-            # Fallback to non-partitioned creation (for backward compatibility)
-            new_member = g.addV("_Member")
-            for key, value in properties.items():
-                new_member = new_member.property(key, value)
-            new_member = new_member.next()
+        if not partition_key:
+            return jsonify({"error": "Partition key is required"}), 400
+
+        new_member = PartitionedQueryHelper.create_partitioned_vertex(
+            g=g,
+            label="_Member",
+            properties=properties,
+            partition_key=partition_key,
+        )
 
         return normalize_vertex(new_member), 201
 

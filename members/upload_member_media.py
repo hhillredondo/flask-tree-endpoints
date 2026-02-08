@@ -37,9 +37,7 @@ _ERR_PARTITION_REQUIRED = "Partition key is required"
 
 
 def _ensure_member_exists(g, member_id, partition_key):
-    if partition_key:
-        return g.V(member_id).has("_partitionKey", partition_key).hasNext()
-    return g.V(member_id).hasNext()
+    return g.V(member_id).has("_partitionKey", partition_key).hasNext()
 
 
 def _get_presigned_ttl_seconds(request):
@@ -60,9 +58,7 @@ def _get_presigned_ttl_seconds(request):
 
 
 def _get_member_property(g, member_id, partition_key, property_key):
-    traversal = g.V(member_id)
-    if partition_key:
-        traversal = traversal.has("_partitionKey", partition_key)
+    traversal = g.V(member_id).has("_partitionKey", partition_key)
     element_traversal = traversal.elementMap()
     if element_traversal.hasNext():
         element = element_traversal.next()

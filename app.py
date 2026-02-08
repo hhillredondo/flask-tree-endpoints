@@ -8,7 +8,6 @@ from composed.trees.create_tree import create_tree
 from composed.trees.delete_tree import delete_tree
 from composed.trees.list_trees import list_user_trees, list_owned_trees
 from gremlin_connection import create_gremlin_connection
-from members.create_member import create_member_query
 from members.update_member import update_member_query
 from members.upload_member_media import (
     upload_member_pic,
@@ -22,7 +21,6 @@ from members.get_member import (
     get_all_members_query,
 )
 from members.delete_member import delete_member_query
-from relations.create_relation import create_relation_query
 from auth.decorators import auth_required
 from auth.utils import get_current_user_id, get_current_user_info
 from partition.middleware import require_partition, get_current_partition
@@ -190,7 +188,7 @@ def get_metrics():
 
 
 # Partitioned Endpoints (require partition_key in header)
-@app.route("/member", methods=["POST", "GET", "PUT", "DELETE"])
+@app.route("/member", methods=["GET", "PUT", "DELETE"])
 @auth_required
 @require_partition
 @require_role()
@@ -202,9 +200,7 @@ def member():
     partition_key = get_current_partition()
     logger.info(f"Member operation by user {user_id} (partition: {partition_key}): {request.method}")
     
-    if request.method == "POST":
-        return create_member_query(g, data)
-    elif request.method == "DELETE":
+    if request.method == "DELETE":
         return delete_member_query(g, data)
     elif request.method == "GET":
         return get_member_query(g, data)
@@ -273,20 +269,6 @@ def get_direct_relations():
     partition_key = get_current_partition()
     logger.info(f"Get direct relations by user {user_id} (partition: {partition_key})")
     return get_direct_relations_query(g, data)
-
-
-@app.route("/relation", methods=["POST"])
-@auth_required
-@require_partition
-@require_role()
-@require_editor_lock
-def create_relation():
-    """Create a relation - requires partition_key in header"""
-    data = request.get_json()
-    user_id = get_current_user_id()
-    partition_key = get_current_partition()
-    logger.info(f"Create relation by user {user_id} (partition: {partition_key})")
-    return create_relation_query(g, data)
 
 
 @app.route("/child", methods=["POST"])

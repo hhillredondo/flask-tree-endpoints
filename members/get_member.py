@@ -15,17 +15,13 @@ def get_member_query(g, data):
         if member_id is None or (isinstance(member_id, str) and not member_id.strip()):
             return jsonify({"error": "Member id is required"}), 400
 
-        # Get partition key from context
         partition_key = get_current_partition()
+        if not partition_key:
+            return jsonify({"error": "Partition key is required"}), 400
 
-        # Check if member exists in the current partition
-        if partition_key:
-            member_traversal = (
-                g.V(member_id).has("_partitionKey", partition_key).elementMap()
-            )
-        else:
-            # Fallback for backward compatibility
-            member_traversal = g.V(member_id).elementMap()
+        member_traversal = (
+            g.V(member_id).has("_partitionKey", partition_key).elementMap()
+        )
 
         if not member_traversal.hasNext():
             return (
@@ -44,18 +40,17 @@ def get_member_query(g, data):
 
 def get_all_members_query(g):
     try:
-        # Get partition key from context
         partition_key = get_current_partition()
+        if not partition_key:
+            return jsonify({"error": "Partition key is required"}), 400
 
-        # Get members in current partition
-        if partition_key:
-            all_members = (
-                g.V()
-                .hasLabel("_Member")
-                .has("_partitionKey", partition_key)
-                .elementMap()
-                .toList()
-            )
+        all_members = (
+            g.V()
+            .hasLabel("_Member")
+            .has("_partitionKey", partition_key)
+            .elementMap()
+            .toList()
+        )
 
         normalized_members = [normalize_vertex(member) for member in all_members]
 
@@ -73,12 +68,11 @@ def get_direct_relations_query(g, data):
         if member_id is None or (isinstance(member_id, str) and not member_id.strip()):
             return jsonify({"error": "Member id is required"}), 400
 
-        # Get partition key from context
         partition_key = get_current_partition()
+        if not partition_key:
+            return jsonify({"error": "Partition key is required"}), 400
 
-        # Check if member exists in the current partition
-        if partition_key:
-            member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
+        member_exists = g.V(member_id).has("_partitionKey", partition_key).hasNext()
 
         if not member_exists:
             return (
