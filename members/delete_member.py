@@ -1,5 +1,12 @@
 from flask import jsonify
+from composed.trees.delete_tree import delete_tree
 from partition.middleware import get_current_partition
+from storage.s3_media import (
+    delete_prefix,
+    get_media_bucket,
+    get_media_prefix,
+    build_member_base_prefix,
+)
 
 
 def delete_member_query(g, data):
@@ -21,6 +28,17 @@ def delete_member_query(g, data):
         if not member_exists:
             return jsonify({"error": f"Member with ID {member_id} does not exist in this tree"}), 404
 
+        member_count = (
+            g.V()
+            .hasLabel("_Member")
+            .has("_partitionKey", partition_key)
+            .count()
+            .next()
+        )
+
+        if member_count == 1:
+            return delete_tree(g)
+
         edge_count = g.V(member_id).bothE().has("_partitionKey", partition_key).count().next()
 
         if edge_count >= 2:
@@ -34,6 +52,14 @@ def delete_member_query(g, data):
             )
 
         g.V(member_id).drop().iterate()
+
+        bucket = get_media_bucket()
+        if bucket:
+            prefix_root = get_media_prefix()
+            delete_prefix(
+                bucket,
+                f"{build_member_base_prefix(prefix_root, partition_key, member_id)}/",
+            )
 
         return jsonify({"message": f"Member {member_id} deleted successfully"}), 200
 

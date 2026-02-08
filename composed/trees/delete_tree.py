@@ -5,7 +5,7 @@ from roles.acl_store import acl_store
 from storage.s3_media import delete_prefix, get_media_bucket, get_media_prefix
 
 
-def delete_tree(g, data):
+def delete_tree(g):
     """Delete all vertices/edges for the current partition."""
     try:
         tree_id = get_current_tree_id()

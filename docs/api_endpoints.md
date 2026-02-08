@@ -23,7 +23,8 @@
   Create tree and seed owner role (auth required).  
   Body: member fields + `tree_id`.
 - `DELETE /trees`  
-  Delete entire tree (owner only, partition required).
+  Delete entire tree (owner only, partition required).  
+  If `S3_MEDIA_BUCKET` is unset, media deletion is skipped and the tree still deletes.
 
 ### Roles (Owner-only)
 - `GET /roles`  
@@ -53,7 +54,9 @@ All member/relationship write operations require editor lock.
 - `PUT /member`  
   Update member (auth + partition + role + lock).
 - `DELETE /member`  
-  Delete member (auth + partition + role + lock).
+  Delete member (auth + partition + role + lock).  
+  If this is the last member in the tree, it deletes the tree (roles/media/graph).  
+  If `S3_MEDIA_BUCKET` is set, member media is deleted.
 - `GET /members`  
   List all members in tree (auth + partition + role).
 - `GET /memberDirectRelations`  

@@ -183,11 +183,10 @@ def create_new_tree():
 def delete_existing_tree():
     """Delete a tree (owner-only, requires partition_key header)."""
     try:
-        data = request.get_json() or {}
         user_id = get_current_user_id()
         partition_key = get_current_partition()
         logger.info(f"Delete tree by user {user_id} (partition: {partition_key})")
-        return delete_tree(g, data)
+        return delete_tree(g)
     except Exception as e:
         logger.error(f"Error deleting tree: {e}")
         return jsonify({"error": str(e)}), 500
