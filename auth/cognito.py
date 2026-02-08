@@ -45,4 +45,23 @@ def get_user_sub_by_email(email: str) -> Optional[str]:
         return None
 
 
+def delete_user_by_sub(user_id: str) -> bool:
+    """Delete a Cognito user by sub (admin delete)."""
+    if not user_id:
+        return False
+
+    try:
+        _get_client().admin_delete_user(
+            UserPoolId=os.getenv("AMPLIFY_USER_POOL_ID"),
+            Username=user_id,
+        )
+        return True
+    except (ClientError, BotoCoreError) as exc:
+        current_app.logger.error(f"Cognito delete failed for {user_id}: {exc}")
+        return False
+    except Exception as exc:
+        current_app.logger.exception(f"Unexpected Cognito delete error for {user_id}: {exc}")
+        return False
+
+
 

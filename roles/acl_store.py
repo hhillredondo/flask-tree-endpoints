@@ -111,13 +111,39 @@ class AclStore:
 
     def list_roles_for_user(self, user_id: str) -> List[Dict[str, str]]:
         try:
-            response = self.table.scan(
-                FilterExpression=Attr("userId").eq(user_id)
-            )
-            return response.get("Items", [])
+            items = []
+            scan_kwargs = {"FilterExpression": Attr("userId").eq(user_id)}
+            while True:
+                response = self.table.scan(**scan_kwargs)
+                items.extend(response.get("Items", []))
+                last_key = response.get("LastEvaluatedKey")
+                if not last_key:
+                    break
+                scan_kwargs["ExclusiveStartKey"] = last_key
+            return items
         except ClientError as exc:
             current_app.logger.error(f"ACL list_roles_for_user failed: {exc}")
             return []
+
+    def delete_roles_for_user(self, user_id: str) -> bool:
+        try:
+            scan_kwargs = {"FilterExpression": Attr("userId").eq(user_id)}
+            with self.table.batch_writer() as batch:
+                while True:
+                    response = self.table.scan(**scan_kwargs)
+                    items = response.get("Items", [])
+                    for item in items:
+                        tree_id = item.get("treeId")
+                        if tree_id:
+                            batch.delete_item(Key={"treeId": tree_id, "userId": user_id})
+                    last_key = response.get("LastEvaluatedKey")
+                    if not last_key:
+                        break
+                    scan_kwargs["ExclusiveStartKey"] = last_key
+            return True
+        except ClientError as exc:
+            current_app.logger.error(f"ACL delete_roles_for_user failed: {exc}")
+            return False
 
 
 acl_store = AclStore()

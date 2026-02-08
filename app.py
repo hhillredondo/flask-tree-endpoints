@@ -22,6 +22,7 @@ from members.get_member import (
 )
 from members.delete_member import delete_member_query
 from auth.decorators import auth_required
+from auth.delete_account import delete_account
 from auth.utils import get_current_user_id, get_current_user_info
 from partition.middleware import require_partition, get_current_partition
 from roles.acl_store import ROLE_OWNER, ROLE_EDITOR
@@ -117,6 +118,19 @@ def get_current_user():
         }), 200
     except Exception as e:
         logger.error(f"Error getting current user: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/account", methods=["DELETE"])
+@auth_required
+def delete_current_account():
+    """Delete the current user's account and owned trees."""
+    try:
+        user_id = get_current_user_id()
+        logger.info(f"Delete account for user {user_id}")
+        return delete_account(g)
+    except Exception as e:
+        logger.error(f"Error deleting account: {e}")
         return jsonify({"error": str(e)}), 500
 
 

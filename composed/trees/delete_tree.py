@@ -21,14 +21,13 @@ def delete_tree(g, data):
             }), 500
 
         bucket = get_media_bucket()
-        if not bucket:
-            return jsonify({"error": "S3_MEDIA_BUCKET is not configured"}), 500
         partition_key = get_current_partition()
         if not partition_key:
             return jsonify({"error": "Partition key is required"}), 400
 
-        prefix = f"{get_media_prefix()}/{partition_key}/"
-        delete_prefix(bucket, prefix)
+        if bucket:
+            prefix = f"{get_media_prefix()}/{partition_key}/"
+            delete_prefix(bucket, prefix)
 
         PartitionedQueryHelper.delete_partition(g)
         return jsonify({"message": "Tree deleted"}), 200

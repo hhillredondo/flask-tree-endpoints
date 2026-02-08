@@ -11,6 +11,8 @@
   Debug auth header (no auth).
 - `GET /auth/me`  
   Returns current user info (auth required).
+- `DELETE /account`  
+  Delete current user account, owned trees, and roles (auth required).
 
 ### Trees
 - `GET /trees`  
