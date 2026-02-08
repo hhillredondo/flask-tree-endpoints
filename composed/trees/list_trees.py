@@ -75,16 +75,11 @@ def list_owned_trees(g):
                 
                 if tree_user_id == user_id:
                     if partition_key not in trees_dict:
-                        # First member of this tree
+                        # First member encountered for this tree
                         trees_dict[partition_key] = {
                             "tree_id": tree_id,
                             "partition_key": partition_key,
                             "member_count": 1,
-                            "first_member": {
-                                "id": str(member_data.get("id")),
-                                "name": member_data.get("name", ""),
-                                "surname": member_data.get("surname", "")
-                            }
                         }
                     else:
                         # Additional member in this tree

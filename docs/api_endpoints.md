@@ -18,7 +18,8 @@
 - `GET /trees`  
   List trees current user can access (auth required).
 - `GET /myTrees`  
-  List trees owned by current user (legacy, auth required).
+  List trees owned by current user (legacy, auth required).  
+  Response includes `tree_id`, `partition_key`, and `member_count`.
 - `POST /trees`  
   Create tree and seed owner role (auth required).  
   Body: member fields + `tree_id`.
