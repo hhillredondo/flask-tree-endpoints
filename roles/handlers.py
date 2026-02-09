@@ -1,6 +1,7 @@
 from flask import jsonify, request, current_app
 
 from auth.cognito import get_user_sub_by_email
+from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
 from .acl_store import ROLE_EDITOR, ROLE_VIEWER, ROLE_OWNER, acl_store
 from .service import invalidate_role_cache
@@ -62,9 +63,16 @@ def add_role():
 
         existing_role = acl_store.get_role(tree_id, target_user_id)
         if existing_role == ROLE_OWNER:
+            current_user_id = get_current_user_id()
+            if target_user_id == current_user_id:
+                return jsonify({
+                    "error": "Invalid operation",
+                    "message": "You already own this tree; owner role cannot be changed. "
+                               "Use a different Cognito user (not an email alias) to share access."
+                }), 400
             return jsonify({
                 "error": "Invalid operation",
-                "message": "Owner role cannot be changed"
+                "message": "Target user is the owner; owner role cannot be changed"
             }), 400
 
         success = acl_store.put_role(tree_id, target_user_id, role)

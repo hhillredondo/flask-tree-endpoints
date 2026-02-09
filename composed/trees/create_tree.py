@@ -35,6 +35,16 @@ def create_tree(g, data):
                 "message": "tree_id must be provided from Amplify DynamoDB tree record"
             }), 400
         
+        # Guard: prevent reusing an existing tree_id in the ACL table
+        existing_roles = acl_store.list_roles(tree_id)
+        if existing_roles:
+            return jsonify({
+                "error": "Tree already initialized",
+                "message": "tree_id already has ACL entries",
+                "tree_id": tree_id,
+                "role_count": len(existing_roles)
+            }), 409
+
         # Generate partition key using Amplify tree ID
         partition_key = partition_manager.generate_partition_key(user_id, tree_id)
 
