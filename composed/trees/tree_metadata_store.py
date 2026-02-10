@@ -67,7 +67,7 @@ class TreeMetadataStore:
                     }
                 }
 
-                response = self._dynamo.meta.client.batch_get_item(
+                response = self._dynamo.batch_get_item(
                     RequestItems=request_items
                 )
 
@@ -77,7 +77,7 @@ class TreeMetadataStore:
                 # Handle unprocessed keys (throttling)
                 unprocessed = response.get("UnprocessedKeys", {})
                 while unprocessed.get(table_name):
-                    response = self._dynamo.meta.client.batch_get_item(
+                    response = self._dynamo.batch_get_item(
                         RequestItems=unprocessed
                     )
                     for item in response.get("Responses", {}).get(table_name, []):
