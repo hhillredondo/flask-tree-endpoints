@@ -21,6 +21,9 @@ class Config:
     ROLE_CACHE_TTL_SECONDS = int(os.getenv('ROLE_CACHE_TTL_SECONDS', '30'))
     LOCK_TABLE_NAME = os.getenv('LOCK_TABLE_NAME', 'TreeEditorLocks')
     LOCK_TTL_SECONDS = int(os.getenv('LOCK_TTL_SECONDS', '300'))
+
+    # Amplify Tree metadata table (DynamoDB managed by Amplify AppSync)
+    TREE_TABLE_NAME = os.getenv('TREE_TABLE_NAME', 'Tree')
     
     # Gremlin/Neptune settings
     GREMLIN_ENDPOINT = os.getenv('GREMLIN_ENDPOINT', 'localhost')

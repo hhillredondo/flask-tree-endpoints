@@ -2,11 +2,13 @@ from flask import jsonify
 from auth.utils import get_current_user_id
 from partition.manager import partition_manager
 from roles.acl_store import acl_store, ROLE_OWNER
+from composed.trees.tree_metadata_store import tree_metadata_store
 
 
 def list_user_trees(g):
     """
     List all trees the current user can access (owner/editor/viewer).
+    Includes tree metadata (name, description, image) from the Amplify table.
     """
     try:
         user_id = get_current_user_id()
@@ -25,6 +27,11 @@ def list_user_trees(g):
             member_counts[tree_id] = member_counts.get(tree_id, 0) + 1
 
         roles = acl_store.list_roles_for_user(user_id)
+
+        # Collect all tree_ids and batch-fetch metadata from Amplify table
+        tree_ids = [e.get("treeId") for e in roles if e.get("treeId")]
+        metadata_map = tree_metadata_store.batch_get_trees(tree_ids)
+
         trees = []
 
         for entry in roles:
@@ -41,11 +48,17 @@ def list_user_trees(g):
                     if owner_id:
                         partition_key = partition_manager.generate_partition_key(owner_id, tree_id)
 
+            # Merge in Amplify tree metadata
+            meta = metadata_map.get(tree_id, {})
+
             trees.append({
                 "tree_id": tree_id,
                 "role": role,
                 "partition_key": partition_key,
-                "member_count": member_counts.get(tree_id, 0)
+                "member_count": member_counts.get(tree_id, 0),
+                "name": meta.get("name"),
+                "description": meta.get("description"),
+                "image": meta.get("image"),
             })
 
         return jsonify({

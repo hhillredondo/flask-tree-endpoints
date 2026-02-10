@@ -208,15 +208,18 @@ def get_metrics():
 @require_editor_lock
 def member():
     """Member CRUD operations - requires partition_key in header"""
-    data = request.get_json()
     user_id = get_current_user_id()
     partition_key = get_current_partition()
     logger.info(f"Member operation by user {user_id} (partition: {partition_key}): {request.method}")
     
+    if request.method == "GET":
+        # GET uses query params (?id=...) — not a JSON body
+        data = {"id": request.args.get("id")}
+        return get_member_query(g, data)
+    
+    data = request.get_json()
     if request.method == "DELETE":
         return delete_member_query(g, data)
-    elif request.method == "GET":
-        return get_member_query(g, data)
     elif request.method == "PUT":
         return update_member_query(g, data)
 
@@ -277,7 +280,8 @@ def get_members():
 @require_role()
 def get_direct_relations():
     """Get direct relations for a member - requires partition_key in header"""
-    data = request.get_json()
+    # GET uses query params (?id=...) — not a JSON body
+    data = {"id": request.args.get("id")}
     user_id = get_current_user_id()
     partition_key = get_current_partition()
     logger.info(f"Get direct relations by user {user_id} (partition: {partition_key})")
