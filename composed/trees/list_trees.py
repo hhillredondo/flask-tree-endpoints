@@ -32,8 +32,14 @@ def list_user_trees(g):
             role = entry.get("role")
             partition_key = None
 
-            if role == ROLE_OWNER and tree_id:
-                partition_key = partition_manager.generate_partition_key(user_id, tree_id)
+            if tree_id:
+                if role == ROLE_OWNER:
+                    partition_key = partition_manager.generate_partition_key(user_id, tree_id)
+                else:
+                    # Editor/viewer: look up the owner so we can build the partition key
+                    owner_id = acl_store.get_owner(tree_id)
+                    if owner_id:
+                        partition_key = partition_manager.generate_partition_key(owner_id, tree_id)
 
             trees.append({
                 "tree_id": tree_id,

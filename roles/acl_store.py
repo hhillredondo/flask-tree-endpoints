@@ -81,6 +81,21 @@ class AclStore:
             current_app.logger.error(f"ACL delete_role failed: {exc}")
             return False
 
+    def get_owner(self, tree_id: str) -> Optional[str]:
+        """Return the userId of the owner for a given tree, or None."""
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key("treeId").eq(tree_id),
+                FilterExpression=Attr("role").eq(ROLE_OWNER),
+            )
+            items = response.get("Items", [])
+            if items:
+                return items[0].get("userId")
+            return None
+        except ClientError as exc:
+            current_app.logger.error(f"ACL get_owner failed: {exc}")
+            return None
+
     def list_roles(self, tree_id: str) -> List[Dict[str, str]]:
         try:
             response = self.table.query(
