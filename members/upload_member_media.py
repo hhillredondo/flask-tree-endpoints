@@ -89,16 +89,33 @@ def _get_upload_files(request):
     return files
 
 
-def _validate_image_bytes(file_bytes):
+def _validate_and_convert_image(file_bytes):
+    """
+    Validate image and convert unsupported formats to JPEG.
+    Returns (image_format, converted_bytes, error_message).
+    converted_bytes is None if no conversion needed, or the converted JPEG bytes.
+    """
     try:
         image = Image.open(io.BytesIO(file_bytes))
         image_format = image.format
         image.verify()
+        
+        # If format is not in our supported list, convert to JPEG
+        if image_format not in _FORMAT_TO_MIME:
+            # Reopen the image (verify() may have closed it)
+            image = Image.open(io.BytesIO(file_bytes))
+            # Convert to RGB (removes alpha channel if present)
+            if image.mode not in ('RGB', 'L'):
+                image = image.convert('RGB')
+            # Save as JPEG in memory
+            buffer = io.BytesIO()
+            image.save(buffer, format='JPEG', quality=95)
+            buffer.seek(0)
+            return 'JPEG', buffer.getvalue(), None
+        
+        return image_format, None, None
     except OSError:
-        return None, "One or more files are not valid images"
-    if image_format not in _FORMAT_TO_MIME:
-        return None, f"Unsupported image format: {image_format}"
-    return image_format, None
+        return None, None, "One or more files are not valid images"
 
 
 def _upload_photo_files(files, bucket, photos_prefix, base_url, region, request):
@@ -111,9 +128,14 @@ def _upload_photo_files(files, bucket, photos_prefix, base_url, region, request)
         if not file_bytes:
             continue
 
-        image_format, error_message = _validate_image_bytes(file_bytes)
+        image_format, converted_bytes, error_message = _validate_and_convert_image(file_bytes)
         if error_message:
             return None, None, error_message
+        
+        # Use converted bytes if provided (format was converted), otherwise use original
+        if converted_bytes is not None:
+            file_bytes = converted_bytes
+            image_format = 'JPEG'  # Always JPEG after conversion
 
         extension = _FORMAT_TO_EXT[image_format]
         object_name = f"{uuid.uuid4().hex}{extension}"
