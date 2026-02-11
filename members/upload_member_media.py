@@ -310,9 +310,34 @@ def get_member_photo_urls(g, request):
         if not photos_value:
             return jsonify({"error": "No photos found for member"}), 404
 
+        # Handle case where value might be a list (Neptune sometimes returns lists)
+        if isinstance(photos_value, list):
+            if len(photos_value) == 0:
+                return jsonify({"error": "No photos found for member"}), 404
+            photos_value = photos_value[0]  # Take first value
+
+        # Ensure photos_value is a string
+        if not isinstance(photos_value, str):
+            return jsonify({
+                "error": "Photos value is not a string",
+                "debug": {"type": type(photos_value).__name__, "value": str(photos_value)}
+            }), 500
+
+        # Handle placeholder URLs - return empty list
+        if photos_value.startswith("http") or "placehold.co" in photos_value:
+            return jsonify({"photos": photos_value, "urls": [], "keys": [], "expires_in": 0}), 200
+
         s3_parts = parse_s3_url(photos_value)
         if not s3_parts:
-            return jsonify({"error": "Invalid photos storage value"}), 500
+            return jsonify({
+                "error": "Invalid photos storage value",
+                "debug": {
+                    "photos_value": photos_value,
+                    "type": type(photos_value).__name__,
+                    "starts_with_s3": photos_value.startswith("s3://"),
+                    "length": len(photos_value)
+                }
+            }), 500
 
         bucket, prefix = s3_parts
         ttl = _get_presigned_ttl_seconds(request)
