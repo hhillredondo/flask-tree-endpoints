@@ -1,6 +1,6 @@
 from flask import jsonify, request, current_app
 
-from auth.cognito import get_user_sub_by_email
+from auth.cognito import get_user_sub_by_email, get_user_email_by_sub
 from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
 from .acl_store import ROLE_EDITOR, ROLE_VIEWER, ROLE_OWNER, acl_store
@@ -18,10 +18,23 @@ def list_roles():
             }), 400
 
         roles = acl_store.list_roles(tree_id)
+        
+        # Enrich roles with email addresses
+        enriched_roles = []
+        for role_entry in roles:
+            user_id = role_entry.get("userId")
+            email = None
+            if user_id:
+                email = get_user_email_by_sub(user_id)
+            
+            enriched_role = role_entry.copy()
+            enriched_role["email"] = email
+            enriched_roles.append(enriched_role)
+        
         return jsonify({
             "tree_id": tree_id,
-            "roles": roles,
-            "count": len(roles)
+            "roles": enriched_roles,
+            "count": len(enriched_roles)
         }), 200
     except Exception as exc:
         current_app.logger.exception(f"Error listing roles: {exc}")
