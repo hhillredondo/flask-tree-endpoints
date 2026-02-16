@@ -46,7 +46,7 @@ jobs:
       - name: Build and push image
         run: |
           IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}"
-          docker build -t "${IMAGE_URI}:latest" .
+          docker build --provenance=false --sbom=false -t "${IMAGE_URI}:latest" .
           docker push "${IMAGE_URI}:latest"
 
       - name: Force new deployment
