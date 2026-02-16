@@ -287,28 +287,29 @@ def verify_graph_remains_connected(g, member_id, partition_key):
         start_id = remaining_members[0]
         
         # Traverse the graph from start_id, following both parent and spouse edges
-        # Use emit() to collect all vertices during traversal, and simplePath() to avoid cycles
-        # Filter by partition key to stay within the partition
-        reachable = (
+        # Use union to traverse both edge types, emit() to collect all vertices during traversal,
+        # and simplePath() to avoid cycles. Filter by partition key to stay within the partition
+        # Collect all reachable vertices, then filter to only those in remaining_members
+        all_reachable = (
             g.V(start_id)
             .repeat(
-                __.bothE("parent", "spouse")
-                .has("_partitionKey", partition_key)
-                .otherV()
-                .has("_partitionKey", partition_key)
+                __.union(
+                    __.bothE("parent").has("_partitionKey", partition_key).otherV().has("_partitionKey", partition_key),
+                    __.bothE("spouse").has("_partitionKey", partition_key).otherV().has("_partitionKey", partition_key)
+                )
                 .simplePath()
             )
             .emit()
-            .hasId(P.within(remaining_members))
             .dedup()
             .id()
             .toList()
         )
         
-        # Include the starting member in reachable set
-        reachable_set = set(reachable)
-        reachable_set.add(start_id)
+        # Filter to only include members that are in remaining_members
         remaining_set = set(remaining_members)
+        reachable_set = set(all_reachable)
+        reachable_set.add(start_id)  # Include the starting member
+        reachable_set = reachable_set.intersection(remaining_set)  # Only keep members in remaining_members
         
         # Check if all remaining members are reachable
         if reachable_set == remaining_set:
