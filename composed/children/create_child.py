@@ -61,6 +61,7 @@ def create_child(g, data):
             (vdt.validate_date_format, (born,)),
             (vdt.validate_url, ("pic", pic)),
             (vdt.validate_url, ("photos", photos)),
+            (ctl.validate_death_date_required_for_old_birth, (born, died)),
         ]
 
         if died:

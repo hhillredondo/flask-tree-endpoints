@@ -65,6 +65,7 @@ def create_spouse(g, data):
             (vdt.validate_url, ("pic", pic)),
             (vdt.validate_url, ("photos", photos)),
             (ctl.verify_legal_marriage_age, (born, married)),
+            (ctl.validate_death_date_required_for_old_birth, (born, died)),
         ]
 
         if died:

@@ -152,7 +152,7 @@ marriage period, and for whom the new spouse passes the fertility checks. A
 
 | Rule | Detail | Source |
 |---|---|---|
-| Max 1 relation to delete | A member with **2 or more** connected edges cannot be deleted | `verify_member_is_deletable` / `delete_member_query` |
+| Graph connectivity maintained | A member can be deleted as long as the graph remains connected after deletion (all remaining members can still reach each other) | `verify_graph_remains_connected` / `verify_member_is_deletable` / `delete_member_query` |
 | Last member deletes tree | If the member being deleted is the **only** member in the partition, the entire tree is deleted instead | `delete_member_query` |
 
 ### Data-type validations (applied on create & update)

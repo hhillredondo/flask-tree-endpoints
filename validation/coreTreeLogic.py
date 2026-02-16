@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+from gremlin_python.process.graph_traversal import __
+from gremlin_python.process.traversal import P
 
 
 fmt = "%Y-%m-%dT%H:%M:%SZ"
@@ -23,6 +25,36 @@ def validate_max_lifespan(born, died, max_years: int = 120):
         died_date = datetime.strptime(died, fmt)
         if died_date > born_date + relativedelta(years=max_years):
             return False, "Humans cannot live that long"
+        return True, ""
+    except ValueError as e:
+        return False, f"Invalid date format: {str(e)}"
+
+
+def validate_death_date_required_for_old_birth(born, died, max_years: int = 120):
+    """
+    Validates that if a person was born more than max_years ago, 
+    they must have a death date provided (since they cannot still be alive).
+    
+    Args:
+        born: Birth date string in format fmt
+        died: Death date string in format fmt, or None/empty string if still alive
+        max_years: Maximum years a person can live (default 120)
+    
+    Returns:
+        Tuple of (is_valid: bool, error_message: str)
+    """
+    try:
+        born_date = datetime.strptime(born, fmt)
+        current_date = datetime.now()
+        
+        # Calculate how many years ago the person was born
+        years_ago = (current_date - born_date).days / 365.25
+        
+        # If born more than max_years ago, death date is required
+        if years_ago > max_years:
+            if not died or died == "":
+                return False, f"Person born more than {max_years} years ago must have a date of death"
+        
         return True, ""
     except ValueError as e:
         return False, f"Invalid date format: {str(e)}"
@@ -224,8 +256,86 @@ def verify_common_children_born_in_marriage(children_born, married, divorced):
     return True, ""
 
 
-def verify_member_is_deletable(relations):
-    if relations >= 2:
-        return False, "Member with 2 or more relations cannot be deleted"
-    elif relations < 2:
-        return True, ""
+def verify_graph_remains_connected(g, member_id, partition_key):
+    """
+    Verify that deleting a member will not disconnect the graph.
+    
+    Args:
+        g: Gremlin traversal source
+        member_id: ID of the member to be deleted
+        partition_key: Partition key for the tree
+        
+    Returns:
+        Tuple of (is_connected: bool, error_message: str)
+    """
+    try:
+        # Get all member IDs except the one being deleted
+        remaining_members = (
+            g.V()
+            .hasLabel("_Member")
+            .has("_partitionKey", partition_key)
+            .hasId(P.neq(member_id))
+            .id()
+            .toList()
+        )
+        
+        # If 0 or 1 members remain, deletion is safe (tree will be empty or single member)
+        if len(remaining_members) <= 1:
+            return True, ""
+        
+        # Start traversal from the first remaining member
+        start_id = remaining_members[0]
+        
+        # Traverse the graph from start_id, following both parent and spouse edges
+        # Use emit() to collect all vertices during traversal, and simplePath() to avoid cycles
+        # Filter by partition key to stay within the partition
+        reachable = (
+            g.V(start_id)
+            .repeat(
+                __.bothE("parent", "spouse")
+                .has("_partitionKey", partition_key)
+                .otherV()
+                .has("_partitionKey", partition_key)
+                .simplePath()
+            )
+            .emit()
+            .hasId(P.within(remaining_members))
+            .dedup()
+            .id()
+            .toList()
+        )
+        
+        # Include the starting member in reachable set
+        reachable_set = set(reachable)
+        reachable_set.add(start_id)
+        remaining_set = set(remaining_members)
+        
+        # Check if all remaining members are reachable
+        if reachable_set == remaining_set:
+            return True, ""
+        else:
+            unreachable_count = len(remaining_set - reachable_set)
+            return (
+                False,
+                f"Deletion would disconnect the tree: {unreachable_count} member(s) would become unreachable"
+            )
+    except Exception as e:
+        return False, f"Error checking graph connectivity: {str(e)}"
+
+
+def verify_member_is_deletable(g, member_id, partition_key):
+    """
+    Verify if a member can be deleted based on graph connectivity.
+    
+    This function checks if deleting the member would disconnect the graph.
+    It replaces the old relation count check with a connectivity validation.
+    
+    Args:
+        g: Gremlin traversal source
+        member_id: ID of the member to check
+        partition_key: Partition key for the tree
+        
+    Returns:
+        Tuple of (is_deletable: bool, error_message: str)
+    """
+    return verify_graph_remains_connected(g, member_id, partition_key)

@@ -7,6 +7,7 @@ from storage.s3_media import (
     get_media_prefix,
     build_member_base_prefix,
 )
+from validation.coreTreeLogic import verify_graph_remains_connected
 
 
 def delete_member_query(g, data):
@@ -39,13 +40,13 @@ def delete_member_query(g, data):
         if member_count == 1:
             return delete_tree(g)
 
-        edge_count = g.V(member_id).bothE().has("_partitionKey", partition_key).count().next()
-
-        if edge_count >= 2:
+        # Check if deletion would disconnect the graph
+        is_connected, error_message = verify_graph_remains_connected(g, member_id, partition_key)
+        if not is_connected:
             return (
                 jsonify(
                     {
-                        "error": f"Cannot delete member {member_id}: it has {edge_count} connected edges"
+                        "error": f"Cannot delete member {member_id}: {error_message}"
                     }
                 ),
                 400,
