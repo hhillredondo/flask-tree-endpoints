@@ -268,8 +268,14 @@ def verify_graph_remains_connected(g, member_id, partition_key):
     Returns:
         Tuple of (is_connected: bool, error_message: str)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"Starting connectivity check for member {member_id} in partition {partition_key}")
+        
         # Get all member IDs except the one being deleted
+        logger.debug("Getting remaining members...")
         remaining_members = (
             g.V()
             .hasLabel("_Member")
@@ -278,49 +284,75 @@ def verify_graph_remains_connected(g, member_id, partition_key):
             .id()
             .toList()
         )
+        logger.info(f"Found {len(remaining_members)} remaining members: {remaining_members}")
         
         # If 0 or 1 members remain, deletion is safe (tree will be empty or single member)
         if len(remaining_members) <= 1:
+            logger.info("Only 0 or 1 members remain, deletion is safe")
             return True, ""
         
         # Start traversal from the first remaining member
         start_id = remaining_members[0]
+        logger.info(f"Starting traversal from member {start_id}")
         
         # Traverse the graph from start_id, following both parent and spouse edges
-        # Use union to traverse both edge types, emit() to collect all vertices during traversal,
-        # and simplePath() to avoid cycles. Filter by partition key to stay within the partition
-        # Collect all reachable vertices, then filter to only those in remaining_members
-        all_reachable = (
-            g.V(start_id)
-            .repeat(
-                __.union(
-                    __.bothE("parent").has("_partitionKey", partition_key).otherV().has("_partitionKey", partition_key),
-                    __.bothE("spouse").has("_partitionKey", partition_key).otherV().has("_partitionKey", partition_key)
+        # Since parent and spouse are the only edge types, we can use bothE() without label filtering
+        logger.debug("Building traversal query...")
+        try:
+            # Simple approach: use bothE() to traverse all edges (which are only parent and spouse)
+            # Filter by partition key to stay within the partition
+            logger.debug("Executing traversal query with bothE() (no label filter needed)...")
+            
+            all_reachable = (
+                g.V(start_id)
+                .repeat(
+                    __.bothE()
+                    .has("_partitionKey", partition_key)
+                    .otherV()
+                    .has("_partitionKey", partition_key)
+                    .hasLabel("_Member")
+                    .simplePath()
                 )
-                .simplePath()
+                .emit()
+                .dedup()
+                .id()
+                .toList()
             )
-            .emit()
-            .dedup()
-            .id()
-            .toList()
-        )
+            logger.info(f"Traversal completed. Found {len(all_reachable)} reachable vertices: {all_reachable}")
+        except Exception as traversal_error:
+            logger.error(f"Error during traversal: {str(traversal_error)}")
+            logger.error(f"Traversal error type: {type(traversal_error)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
         
         # Filter to only include members that are in remaining_members
+        logger.debug("Filtering reachable vertices...")
         remaining_set = set(remaining_members)
         reachable_set = set(all_reachable)
         reachable_set.add(start_id)  # Include the starting member
+        logger.debug(f"Reachable set before intersection: {reachable_set}")
+        logger.debug(f"Remaining set: {remaining_set}")
         reachable_set = reachable_set.intersection(remaining_set)  # Only keep members in remaining_members
+        logger.info(f"After filtering: {len(reachable_set)} reachable members out of {len(remaining_set)} remaining")
         
         # Check if all remaining members are reachable
         if reachable_set == remaining_set:
+            logger.info("All remaining members are reachable - deletion is safe")
             return True, ""
         else:
-            unreachable_count = len(remaining_set - reachable_set)
+            unreachable = remaining_set - reachable_set
+            unreachable_count = len(unreachable)
+            logger.warning(f"Deletion would disconnect the tree: {unreachable_count} unreachable member(s): {unreachable}")
             return (
                 False,
                 f"Deletion would disconnect the tree: {unreachable_count} member(s) would become unreachable"
             )
     except Exception as e:
+        logger.error(f"Exception in verify_graph_remains_connected: {str(e)}")
+        logger.error(f"Exception type: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return False, f"Error checking graph connectivity: {str(e)}"
 
 
