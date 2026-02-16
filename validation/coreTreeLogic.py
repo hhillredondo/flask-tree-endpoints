@@ -296,12 +296,14 @@ def verify_graph_remains_connected(g, member_id, partition_key):
         logger.info(f"Starting traversal from member {start_id}")
         
         # Traverse the graph from start_id, following both parent and spouse edges
-        # Since parent and spouse are the only edge types, we can use bothE() without label filtering
+        # CRITICAL: We must exclude the member being deleted from traversal paths
+        # to simulate what the graph would look like AFTER deletion
         logger.debug("Building traversal query...")
         try:
             # Simple approach: use bothE() to traverse all edges (which are only parent and spouse)
             # Filter by partition key to stay within the partition
-            logger.debug("Executing traversal query with bothE() (no label filter needed)...")
+            # IMPORTANT: Exclude the member being deleted from being visited during traversal
+            logger.debug("Executing traversal query with bothE() (excluding member being deleted)...")
             
             all_reachable = (
                 g.V(start_id)
@@ -311,6 +313,7 @@ def verify_graph_remains_connected(g, member_id, partition_key):
                     .otherV()
                     .has("_partitionKey", partition_key)
                     .hasLabel("_Member")
+                    .hasId(P.neq(member_id))  # CRITICAL: Don't traverse through the member being deleted
                     .simplePath()
                 )
                 .emit()
