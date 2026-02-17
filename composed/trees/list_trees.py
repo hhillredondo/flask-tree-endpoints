@@ -8,7 +8,7 @@ from composed.trees.tree_metadata_store import tree_metadata_store
 def list_user_trees(g):
     """
     List all trees the current user can access (owner/editor/viewer).
-    Includes tree metadata (name, description, image) from the Amplify table.
+    Includes tree metadata (name) from the Amplify table.
     """
     try:
         user_id = get_current_user_id()
@@ -57,8 +57,6 @@ def list_user_trees(g):
                 "partition_key": partition_key,
                 "member_count": member_counts.get(tree_id, 0),
                 "name": meta.get("name"),
-                "description": meta.get("description"),
-                "image": meta.get("image"),
             })
 
         return jsonify({
@@ -109,7 +107,7 @@ def list_owned_trees(g):
         return jsonify({
             "trees": trees,
             "count": len(trees),
-            "note": "Fetch tree metadata (name, description) from Amplify DynamoDB using tree_id"
+            "note": "Fetch tree metadata (name) from Amplify DynamoDB using tree_id"
         }), 200
 
     except Exception as e:
