@@ -6,6 +6,7 @@ from composed.spouses.update_spouse_relation import update_spouse_relation
 from composed.spouses.create_spouse import create_spouse
 from composed.trees.create_tree import create_tree
 from composed.trees.delete_tree import delete_tree
+from composed.trees.quit_tree import quit_tree
 from composed.trees.list_trees import list_user_trees, list_owned_trees
 from gremlin_connection import create_gremlin_connection
 from members.update_member import update_member_query
@@ -25,7 +26,7 @@ from auth.decorators import auth_required
 from auth.delete_account import delete_account
 from auth.utils import get_current_user_id, get_current_user_info
 from partition.middleware import require_partition, get_current_partition
-from roles.acl_store import ROLE_OWNER, ROLE_EDITOR
+from roles.acl_store import ROLE_OWNER, ROLE_EDITOR, ROLE_VIEWER
 from roles.handlers import list_roles, add_role, remove_role
 from roles.middleware import require_role
 from editor_lock.handlers import (
@@ -189,6 +190,23 @@ def delete_existing_tree():
         return delete_tree(g)
     except Exception as e:
         logger.error(f"Error deleting tree: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# Editor/viewer-only: quit tree (remove own role)
+@app.route("/trees/quit", methods=["POST"])
+@auth_required
+@require_partition
+@require_role(required_roles=[ROLE_EDITOR, ROLE_VIEWER])
+def quit_existing_tree():
+    """Remove current user's role from tree (editor/viewer only, requires partition_key header)."""
+    try:
+        user_id = get_current_user_id()
+        partition_key = get_current_partition()
+        logger.info(f"Quit tree by user {user_id} (partition: {partition_key})")
+        return quit_tree()
+    except Exception as e:
+        logger.error(f"Error quitting tree: {e}")
         return jsonify({"error": str(e)}), 500
 
 

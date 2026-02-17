@@ -26,6 +26,9 @@
 - `DELETE /trees`  
   Delete entire tree (owner only, partition required).  
   If `S3_MEDIA_BUCKET` is unset, media deletion is skipped and the tree still deletes.
+- `POST /trees/quit`  
+  Remove current user's role from tree (editor/viewer only, partition required).  
+  Owners cannot quit trees; they must use `DELETE /trees` to delete the tree instead.
 
 ### Roles (Owner-only)
 - `GET /roles`  
