@@ -42,6 +42,11 @@ class Config:
     S3_PUBLIC_BASE_URL = os.getenv('S3_PUBLIC_BASE_URL')
     S3_PIC_SIZE = int(os.getenv('S3_PIC_SIZE', '24'))
     S3_PRESIGNED_TTL_SECONDS = int(os.getenv('S3_PRESIGNED_TTL_SECONDS', '3600'))
+    
+    # User limits
+    MAX_TREES_PER_USER = 5
+    MAX_STORAGE_PER_TREE_BYTES = 1024 * 1024 * 1024  # 1GB
+    ENFORCE_LIMITS = os.getenv('ENFORCE_LIMITS', 'false').lower() == 'true'
 
 
 class DevelopmentConfig(Config):

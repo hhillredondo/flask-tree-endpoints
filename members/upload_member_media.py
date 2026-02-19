@@ -5,12 +5,15 @@ import uuid
 from flask import jsonify, current_app
 from PIL import Image
 
+from auth.utils import get_current_user_id
+from auth.user_tier import is_limit_exempt
 from partition.middleware import get_current_partition
 from storage.s3_media import (
     build_photos_prefix,
     build_pic_key,
     build_public_url,
     build_s3_url,
+    calculate_tree_storage,
     generate_presigned_get_url,
     get_media_bucket,
     get_media_prefix,
@@ -193,9 +196,27 @@ def upload_member_pic(g, request):
         buffer = io.BytesIO()
         image.save(buffer, format="PNG")
         buffer.seek(0)
+        
+        # Get file size before upload
+        file_bytes = buffer.getvalue()
+        file_size = len(file_bytes)
+        
+        # Check storage limit (only in production, and only for free users)
+        user_id = get_current_user_id()
+        if current_app.config.get('ENFORCE_LIMITS') and not is_limit_exempt(user_id):
+            current_storage = calculate_tree_storage(partition_key)
+            max_storage = current_app.config.get('MAX_STORAGE_PER_TREE_BYTES', 1024 * 1024 * 1024)
+            
+            if current_storage + file_size > max_storage:
+                used_mb = current_storage / (1024 * 1024)
+                max_mb = max_storage / (1024 * 1024)
+                return jsonify({
+                    "error": "Storage limit exceeded",
+                    "message": f"This tree has used {used_mb:.1f}MB of {max_mb:.0f}MB. Please delete some photos before uploading new ones."
+                }), 403
 
         key = build_pic_key(prefix, partition_key, member_id, ext="png")
-        upload_bytes(bucket, key, buffer.getvalue(), content_type="image/png")
+        upload_bytes(bucket, key, file_bytes, content_type="image/png")
 
         s3_url = build_s3_url(bucket, key)
         g.V(member_id).property("pic", s3_url).next()
@@ -238,6 +259,39 @@ def upload_member_photos(g, request):
         region = current_app.config.get("AWS_REGION") or os.getenv("AWS_REGION")
         base_url = current_app.config.get("S3_PUBLIC_BASE_URL") or os.getenv("S3_PUBLIC_BASE_URL")
         photos_prefix = build_photos_prefix(prefix, partition_key, member_id)
+        
+        # Calculate total size of files to be uploaded
+        total_files_size = 0
+        for upload_file in files:
+            if not upload_file:
+                continue
+            # Read file to get size (will be read again in _upload_photo_files, but needed for validation)
+            file_bytes = upload_file.read()
+            upload_file.seek(0)  # Reset file pointer for later use
+            if file_bytes:
+                # Validate and potentially convert image
+                image_format, converted_bytes, error_message = _validate_and_convert_image(file_bytes)
+                if error_message:
+                    return jsonify({"error": error_message}), 400
+                # Use converted bytes size if converted, otherwise original
+                if converted_bytes is not None:
+                    total_files_size += len(converted_bytes)
+                else:
+                    total_files_size += len(file_bytes)
+        
+        # Check storage limit (only in production, and only for free users)
+        user_id = get_current_user_id()
+        if current_app.config.get('ENFORCE_LIMITS') and not is_limit_exempt(user_id):
+            current_storage = calculate_tree_storage(partition_key)
+            max_storage = current_app.config.get('MAX_STORAGE_PER_TREE_BYTES', 1024 * 1024 * 1024)
+            
+            if current_storage + total_files_size > max_storage:
+                used_mb = current_storage / (1024 * 1024)
+                max_mb = max_storage / (1024 * 1024)
+                return jsonify({
+                    "error": "Storage limit exceeded",
+                    "message": f"This tree has used {used_mb:.1f}MB of {max_mb:.0f}MB. Please delete some photos before uploading new ones."
+                }), 403
 
         uploaded_urls, uploaded_keys, error_message = _upload_photo_files(
             files, bucket, photos_prefix, base_url, region, request

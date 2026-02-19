@@ -108,3 +108,35 @@ def delete_prefix(bucket, prefix):
     except ClientError as exc:
         raise RuntimeError(f"Failed to delete S3 objects: {exc}") from exc
 
+
+def calculate_tree_storage(partition_key: str) -> int:
+    """
+    Calculate total S3 storage used by a tree.
+    
+    Args:
+        partition_key: The partition key for the tree (format: userId_treeId)
+    
+    Returns:
+        Total bytes used by all S3 objects under this tree's prefix
+    """
+    bucket = get_media_bucket()
+    if not bucket:
+        return 0
+    
+    prefix = get_media_prefix()
+    tree_prefix = f"{prefix}/{partition_key}/"
+    
+    s3_client = get_s3_client()
+    total_size = 0
+    
+    try:
+        paginator = s3_client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=bucket, Prefix=tree_prefix):
+            for obj in page.get("Contents", []):
+                total_size += obj.get("Size", 0)
+    except ClientError as exc:
+        current_app.logger.error(f"Failed to calculate tree storage: {exc}")
+        raise RuntimeError(f"Failed to calculate tree storage: {exc}") from exc
+    
+    return total_size
+

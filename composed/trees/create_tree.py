@@ -1,5 +1,6 @@
-from flask import jsonify
+from flask import jsonify, current_app
 from auth.utils import get_current_user_id
+from auth.user_tier import is_limit_exempt
 from partition.manager import partition_manager
 from partition.middleware import set_partition_context
 from members.create_member import create_member_query
@@ -26,6 +27,18 @@ def create_tree(g, data):
         user_id = get_current_user_id()
         if not user_id:
             return jsonify({"error": "User not authenticated"}), 401
+        
+        # Check tree limit (only in production, and only for free users)
+        if current_app.config.get('ENFORCE_LIMITS') and not is_limit_exempt(user_id):
+            roles = acl_store.list_roles_for_user(user_id)
+            tree_count = len(roles)
+            max_trees = current_app.config.get('MAX_TREES_PER_USER', 3)
+            
+            if tree_count >= max_trees:
+                return jsonify({
+                    "error": "Tree limit reached",
+                    "message": f"You have reached the limit of {max_trees} trees. You currently have access to {tree_count} trees (as owner, editor, or viewer)."
+                }), 403
         
         # Get tree_id from Amplify (required)
         tree_id = data.get("tree_id")
