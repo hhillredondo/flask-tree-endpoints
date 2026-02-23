@@ -52,8 +52,8 @@ def create_tree(g, data):
         existing_roles = acl_store.list_roles(tree_id)
         if existing_roles:
             return jsonify({
-                "error": "Tree already initialized",
-                "message": "tree_id already has ACL entries",
+                "error": "Tree already set up",
+                "message": "This tree has already been set up. Open it from your trees list or try creating a new tree.",
                 "tree_id": tree_id,
                 "role_count": len(existing_roles)
             }), 409
@@ -72,22 +72,20 @@ def create_tree(g, data):
         # Set partition context so create_member_query can use it
         set_partition_context(partition_key, user_id, tree_id)
 
-        # Seed ACL: creator is owner
-        if not acl_store.put_role(tree_id, user_id, ROLE_OWNER):
-            return jsonify({"error": "Failed to assign owner role"}), 500
-        
-        # Create the first member using the existing create_member_query
-        # This will run all the important validations
+        # Create the first member first (validations run here; no ACL written yet so retry works)
         member_result = create_member_query(g, data)
-        
-        # Check if member creation was successful
+
         if isinstance(member_result, tuple):
             member_data, status_code = member_result
             if status_code != 201:
                 return member_result
         else:
             member_data = member_result
-        
+
+        # Seed ACL only after first member succeeds (so validation failures don't block retry)
+        if not acl_store.put_role(tree_id, user_id, ROLE_OWNER):
+            return jsonify({"error": "Failed to assign owner role"}), 500
+
         # Return partition key and member information
         response = {
             "message": "First member created successfully in tree",
