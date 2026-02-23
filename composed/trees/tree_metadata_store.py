@@ -13,6 +13,7 @@ class TreeMetadataStore:
         self._resource = None
         self._table = None
         self._table_name = os.getenv("TREE_TABLE_NAME", "Tree")
+        self._logged_table_name = False
         self._region = (
             os.getenv("AWS_REGION")
             or os.getenv("AWS_DEFAULT_REGION")
@@ -27,6 +28,16 @@ class TreeMetadataStore:
 
     @property
     def table(self):
+        if not self._logged_table_name:
+            try:
+                current_app.logger.info(
+                    "TreeMetadataStore TREE_TABLE_NAME env=%s resolved table=%s",
+                    os.getenv("TREE_TABLE_NAME"),
+                    self._table_name,
+                )
+            except Exception:
+                pass
+            self._logged_table_name = True
         if self._table is None:
             self._table = self._dynamo.Table(self._table_name)
         return self._table
