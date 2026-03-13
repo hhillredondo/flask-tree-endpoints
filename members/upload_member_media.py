@@ -327,8 +327,8 @@ def get_member_pic_url(g, request):
         if not pic_value:
             if debug:
                 element = g.V(member_id).has("_partitionKey", partition_key).elementMap().next()
-                return jsonify({"error": "No pic found for member", "debug": {"element": element}}), 404
-            return jsonify({"error": "No pic found for member"}), 404
+                return jsonify({"url": None, "debug": {"element": element}}), 200
+            return jsonify({"url": None}), 200
 
         if isinstance(pic_value, str) and pic_value.startswith("http"):
             return jsonify({"pic": pic_value, "url": pic_value}), 200
@@ -362,12 +362,12 @@ def get_member_photo_urls(g, request):
 
         photos_value = _get_member_property(g, member_id, partition_key, "photos")
         if not photos_value:
-            return jsonify({"error": "No photos found for member"}), 404
+            return jsonify({"urls": [], "keys": [], "expires_in": 0}), 200
 
         # Handle case where value might be a list (Neptune sometimes returns lists)
         if isinstance(photos_value, list):
             if len(photos_value) == 0:
-                return jsonify({"error": "No photos found for member"}), 404
+                return jsonify({"urls": [], "keys": [], "expires_in": 0}), 200
             photos_value = photos_value[0]  # Take first value
 
         # Ensure photos_value is a string
