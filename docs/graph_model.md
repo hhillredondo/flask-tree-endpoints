@@ -29,6 +29,11 @@ Only one vertex label exists: **`_Member`**.
 | `died` | string | no (optional) | **no** (immutable) | Same format as `born`; must be after `born` |
 | `pic` | string | yes | yes | Valid URL (http / https / ftp / s3). After upload, stored as an S3 URI |
 | `photos` | string | yes | yes | Valid URL (http / https / ftp / s3). After upload, stored as an S3 URI pointing to a prefix |
+| `profession` | string | no (optional) | yes | Free-text string (e.g. "doctor", "carpenter") |
+| `birth_location` | string | no (optional) | yes | Free-text string (e.g. "London", "Madrid") |
+| `death_location` | string | no (optional) | yes | Free-text string (e.g. "London", "Madrid") |
+| `height` | number | no (optional) | yes | Height in centimetres |
+| `documents` | string | no (optional) | yes | S3 URI pointing to a prefix (set after first document upload) |
 | `_partitionKey` | string | auto-set | no | Internal system property (`<userId>_<treeId>`) |
 
 > **Note on `born` / `died` immutability:** The `update_member` endpoint
@@ -75,20 +80,25 @@ Represents a marriage between two members.
 ## Visual Schema
 
 ```
-  ┌────────────────────────────────────────┐
-  │              _Member                   │
-  │────────────────────────────────────────│
-  │  id            (auto, string)          │
-  │  name          (string, required)      │
-  │  surname       (string, required)      │
-  │  gender        (string, required)      │
-  │  description   (string, required)      │
-  │  born          (string, required)      │
-  │  died          (string, optional)      │
-  │  pic           (string, required)      │
-  │  photos        (string, required)      │
-  │  _partitionKey (string, internal)      │
-  └──────────┬──────────────┬──────────────┘
+  ┌──────────────────────────────────────────┐
+  │              _Member                     │
+  │──────────────────────────────────────────│
+  │  id              (auto, string)          │
+  │  name            (string, required)      │
+  │  surname         (string, required)      │
+  │  gender          (string, required)      │
+  │  description     (string, required)      │
+  │  born            (string, required)      │
+  │  died            (string, optional)      │
+  │  pic             (string, required)      │
+  │  photos          (string, required)      │
+  │  profession      (string, optional)      │
+  │  birth_location  (string, optional)      │
+  │  death_location  (string, optional)      │
+  │  height          (number, optional)      │
+  │  documents       (string, optional)      │
+  │  _partitionKey   (string, internal)      │
+  └────────────┬──────────────┬──────────────┘
              │              │
       parent │              │ spouse
       (no props)            │ (married, divorced)

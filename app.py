@@ -13,8 +13,10 @@ from members.update_member import update_member_query
 from members.upload_member_media import (
     upload_member_pic,
     upload_member_photos,
+    upload_member_documents,
     get_member_pic_url,
     get_member_photo_urls,
+    get_member_document_urls,
 )
 from members.get_member import (
     get_direct_relations_query,
@@ -278,6 +280,25 @@ def get_member_pic_url_route():
 def get_member_photo_urls_route():
     """Get presigned URLs for a member's photos."""
     return get_member_photo_urls(g, request)
+
+
+@app.route("/member/documents", methods=["POST"])
+@auth_required
+@require_partition
+@require_role()
+@require_editor_lock
+def upload_member_documents_route():
+    """Upload and store member documents (PDF, DOC, DOCX, TXT, XLS, XLSX)."""
+    return upload_member_documents(g, request)
+
+
+@app.route("/member/documents-urls", methods=["GET"])
+@auth_required
+@require_partition
+@require_role()
+def get_member_document_urls_route():
+    """Get presigned URLs for a member's documents."""
+    return get_member_document_urls(g, request)
 
 
 @app.route("/members", methods=["GET"])

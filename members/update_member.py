@@ -34,6 +34,10 @@ def update_member_query(g, data):
         description = data.get("description")
         pic = data.get("pic")
         photos = data.get("photos")
+        profession = data.get("profession")
+        birth_location = data.get("birth_location")
+        death_location = data.get("death_location")
+        height = data.get("height")
 
         validations = []
         if name:
@@ -62,6 +66,14 @@ def update_member_query(g, data):
             traversal.property("pic", pic)
         if photos:
             traversal.property("photos", photos)
+        if "profession" in data:
+            traversal.property("profession", profession or "")
+        if "birth_location" in data:
+            traversal.property("birth_location", birth_location or "")
+        if "death_location" in data:
+            traversal.property("death_location", death_location or "")
+        if "height" in data:
+            traversal.property("height", height if height is not None else "")
 
         updated_member = traversal.next()
 

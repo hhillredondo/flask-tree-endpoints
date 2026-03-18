@@ -33,6 +33,10 @@ def create_spouse(g, data):
         photos = data.get("photos")
         married = data.get("married")
         divorced = data.get("divorced")
+        profession = data.get("profession")
+        birth_location = data.get("birth_location")
+        death_location = data.get("death_location")
+        height = data.get("height")
 
         required_fields = [
             "spouse_id",
@@ -140,6 +144,14 @@ def create_spouse(g, data):
         
         if died:
             properties["died"] = died
+        if profession:
+            properties["profession"] = profession
+        if birth_location:
+            properties["birth_location"] = birth_location
+        if death_location:
+            properties["death_location"] = death_location
+        if height is not None:
+            properties["height"] = height
 
         # Create spouse vertex with partition key
         spouse = PartitionedQueryHelper.create_partitioned_vertex(

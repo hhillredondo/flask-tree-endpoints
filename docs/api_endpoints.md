@@ -56,7 +56,8 @@ All member/relationship write operations require editor lock.
 - `GET /member`  
   Fetch member (auth + partition + role).
 - `PUT /member`  
-  Update member (auth + partition + role + lock).
+  Update member (auth + partition + role + lock).  
+  Supports optional fields: `profession`, `birth_location`, `death_location`, `height`.
 - `DELETE /member`  
   Delete member (auth + partition + role + lock).  
   If this is the last member in the tree, it deletes the tree (roles/media/graph).  
@@ -67,6 +68,9 @@ All member/relationship write operations require editor lock.
   Direct relations for a member (auth + partition + role).
 
 ### Composed member endpoints
+
+All create endpoints accept optional fields: `profession`, `birth_location`, `death_location`, `height`.
+
 - `POST /child`  
   Create child (auth + partition + role + lock).
 - `POST /parent`  
@@ -81,10 +85,15 @@ All member/relationship write operations require editor lock.
   Upload member pic (multipart form; `member_id`, `file`).
 - `POST /member/photos`  
   Upload member photos (multipart form; `member_id`, `file` or `files[]`).
+- `POST /member/documents`  
+  Upload member documents (multipart form; `member_id`, `file` or `files[]`).  
+  Allowed types: PDF, DOC, DOCX, TXT, XLS, XLSX.
 - `GET /member/pic-url`  
   Get presigned URL for pic (`member_id`, optional `expires_in`).
 - `GET /member/photos-urls`  
   Get presigned URLs for photos (`member_id`, optional `expires_in`).
+- `GET /member/documents-urls`  
+  Get presigned URLs for documents (`member_id`, optional `expires_in`).
 
 ### Metrics
 - `GET /metrics`  

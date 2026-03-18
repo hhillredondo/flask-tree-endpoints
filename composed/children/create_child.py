@@ -30,6 +30,10 @@ def create_child(g, data):
         died = data.get("died")
         pic = data.get("pic")
         photos = data.get("photos")
+        profession = data.get("profession")
+        birth_location = data.get("birth_location")
+        death_location = data.get("death_location")
+        height = data.get("height")
 
         required_fields = [
             "parent_id",
@@ -136,6 +140,14 @@ def create_child(g, data):
         
         if died:
             properties["died"] = died
+        if profession:
+            properties["profession"] = profession
+        if birth_location:
+            properties["birth_location"] = birth_location
+        if death_location:
+            properties["death_location"] = death_location
+        if height is not None:
+            properties["height"] = height
 
         # Create child vertex with partition key
         child = PartitionedQueryHelper.create_partitioned_vertex(

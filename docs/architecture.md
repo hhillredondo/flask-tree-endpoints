@@ -148,4 +148,5 @@ flowchart LR
     Members --> MemberId["&lt;member_id&gt;"]
     MemberId --> Pic["pic.png"]
     MemberId --> Photos["photos/&lt;uuid&gt;.&lt;ext&gt;"]
+    MemberId --> Documents["documents/&lt;uuid&gt;.&lt;ext&gt;"]
 ```

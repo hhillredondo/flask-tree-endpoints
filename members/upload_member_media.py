@@ -9,6 +9,7 @@ from auth.utils import get_current_user_id
 from auth.user_tier import is_limit_exempt
 from partition.middleware import get_current_partition
 from storage.s3_media import (
+    build_documents_prefix,
     build_photos_prefix,
     build_pic_key,
     build_public_url,
@@ -33,6 +34,15 @@ _FORMAT_TO_EXT = {
     "JPEG": ".jpg",
     "PNG": ".png",
     "WEBP": ".webp",
+}
+
+_DOCUMENT_MIMES = {
+    "application/pdf": ".pdf",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "text/plain": ".txt",
+    "application/vnd.ms-excel": ".xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
 }
 
 _ERR_MISSING_MEMBER_ID = "Missing member_id"
@@ -399,6 +409,152 @@ def get_member_photo_urls(g, request):
         urls = [generate_presigned_get_url(bucket, key, ttl) for key in keys]
         return jsonify(
             {"photos": photos_value, "urls": urls, "keys": keys, "expires_in": ttl}
+        ), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+def upload_member_documents(g, request):
+    try:
+        member_id = request.form.get("member_id") or request.form.get("id")
+        if not member_id:
+            return jsonify({"error": _ERR_MISSING_MEMBER_ID}), 400
+
+        files = _get_upload_files(request)
+        if not files:
+            return jsonify({"error": "No files provided"}), 400
+
+        partition_key = get_current_partition()
+        if not partition_key:
+            return jsonify({"error": _ERR_PARTITION_REQUIRED}), 400
+        if not _ensure_member_exists(g, member_id, partition_key):
+            return (
+                jsonify({"error": f"Member with ID {member_id} does not exist in this tree"}),
+                404,
+            )
+
+        bucket = get_media_bucket()
+        if not bucket:
+            return jsonify({"error": "S3_MEDIA_BUCKET is not configured"}), 500
+
+        prefix = get_media_prefix()
+        region = current_app.config.get("AWS_REGION") or os.getenv("AWS_REGION")
+        base_url = current_app.config.get("S3_PUBLIC_BASE_URL") or os.getenv("S3_PUBLIC_BASE_URL")
+        docs_prefix = build_documents_prefix(prefix, partition_key, member_id)
+
+        total_files_size = 0
+        file_data_list = []
+        for upload_file in files:
+            if not upload_file:
+                continue
+            file_bytes = upload_file.read()
+            if not file_bytes:
+                continue
+
+            content_type = upload_file.content_type or ""
+            if content_type not in _DOCUMENT_MIMES:
+                allowed = ", ".join(sorted(_DOCUMENT_MIMES.values()))
+                return jsonify({
+                    "error": f"Unsupported file type: {content_type}. Allowed: {allowed}"
+                }), 400
+
+            total_files_size += len(file_bytes)
+            ext = _DOCUMENT_MIMES[content_type]
+            file_data_list.append((file_bytes, content_type, ext))
+
+        if not file_data_list:
+            return jsonify({"error": "No valid document files provided"}), 400
+
+        user_id = get_current_user_id()
+        if current_app.config.get('ENFORCE_LIMITS') and not is_limit_exempt(user_id):
+            current_storage = calculate_tree_storage(partition_key)
+            max_storage = current_app.config.get('MAX_STORAGE_PER_TREE_BYTES', 1024 * 1024 * 1024)
+
+            if current_storage + total_files_size > max_storage:
+                used_mb = current_storage / (1024 * 1024)
+                max_mb = max_storage / (1024 * 1024)
+                return jsonify({
+                    "error": "Storage limit exceeded",
+                    "message": f"This tree has used {used_mb:.1f}MB of {max_mb:.0f}MB. Please delete some files before uploading new ones."
+                }), 403
+
+        uploaded_urls = []
+        uploaded_keys = []
+        for file_bytes, content_type, ext in file_data_list:
+            object_name = f"{uuid.uuid4().hex}{ext}"
+            key = f"{docs_prefix}{object_name}"
+            upload_bytes(bucket, key, file_bytes, content_type=content_type)
+            uploaded_keys.append(key)
+            if base_url:
+                uploaded_urls.append(build_public_url(bucket, key, region=region, base_url=base_url))
+            else:
+                uploaded_urls.append(
+                    generate_presigned_get_url(bucket, key, _get_presigned_ttl_seconds(request))
+                )
+
+        documents_path = f"s3://{bucket}/{docs_prefix}"
+        g.V(member_id).property("documents", documents_path).next()
+
+        return jsonify({
+            "documents": documents_path,
+            "uploaded": uploaded_urls,
+            "uploaded_keys": uploaded_keys,
+        }), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+def get_member_document_urls(g, request):
+    try:
+        member_id = request.args.get("member_id") or request.args.get("id")
+        if not member_id:
+            return jsonify({"error": _ERR_MISSING_MEMBER_ID}), 400
+
+        partition_key = get_current_partition()
+        if not partition_key:
+            return jsonify({"error": _ERR_PARTITION_REQUIRED}), 400
+        if not _ensure_member_exists(g, member_id, partition_key):
+            return (
+                jsonify({"error": f"Member with ID {member_id} does not exist in this tree"}),
+                404,
+            )
+
+        documents_value = _get_member_property(g, member_id, partition_key, "documents")
+        if not documents_value:
+            return jsonify({"urls": [], "keys": [], "expires_in": 0}), 200
+
+        if isinstance(documents_value, list):
+            if len(documents_value) == 0:
+                return jsonify({"urls": [], "keys": [], "expires_in": 0}), 200
+            documents_value = documents_value[0]
+
+        if not isinstance(documents_value, str):
+            return jsonify({
+                "error": "Documents value is not a string",
+                "debug": {"type": type(documents_value).__name__, "value": str(documents_value)}
+            }), 500
+
+        if documents_value.startswith("http"):
+            return jsonify({"documents": documents_value, "urls": [], "keys": [], "expires_in": 0}), 200
+
+        s3_parts = parse_s3_url(documents_value)
+        if not s3_parts:
+            return jsonify({
+                "error": "Invalid documents storage value",
+                "debug": {
+                    "documents_value": documents_value,
+                    "type": type(documents_value).__name__,
+                    "starts_with_s3": documents_value.startswith("s3://"),
+                    "length": len(documents_value)
+                }
+            }), 500
+
+        bucket, doc_prefix = s3_parts
+        ttl = _get_presigned_ttl_seconds(request)
+        keys = list_objects(bucket, doc_prefix)
+        urls = [generate_presigned_get_url(bucket, key, ttl) for key in keys]
+        return jsonify(
+            {"documents": documents_value, "urls": urls, "keys": keys, "expires_in": ttl}
         ), 200
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500

@@ -31,6 +31,10 @@ def build_photos_prefix(prefix, partition_key, member_id):
     return f"{build_member_base_prefix(prefix, partition_key, member_id)}/photos/"
 
 
+def build_documents_prefix(prefix, partition_key, member_id):
+    return f"{build_member_base_prefix(prefix, partition_key, member_id)}/documents/"
+
+
 def build_public_url(bucket, key, region=None, base_url=None):
     if base_url:
         return f"{base_url.rstrip('/')}/{key}"
