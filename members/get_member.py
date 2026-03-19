@@ -84,11 +84,21 @@ def get_direct_relations_query(g, data):
 
         related_members_list = (
             g.V(member_id)
-            .project("member", "parents", "children", "spouses")
+            .project("member", "parents", "children", "spouses", "siblings")
             .by(__.elementMap())
             .by(__.inE("parent").outV().elementMap().dedup().fold())
             .by(__.outE("parent").inV().elementMap().dedup().fold())
             .by(__.bothE("spouse").otherV().elementMap().dedup().fold())
+            .by(
+                __.inE("parent")
+                .outV()
+                .outE("parent")
+                .inV()
+                .where(__.not_(__.hasId(member_id)))
+                .dedup()
+                .elementMap()
+                .fold()
+            )
             .toList()
         )
 
@@ -108,6 +118,10 @@ def get_direct_relations_query(g, data):
             "spouses": [
                 normalize_vertex(spouse) for spouse in related_members.get("spouses")
             ],
+            "siblings": [
+                normalize_vertex(sibling)
+                for sibling in related_members.get("siblings")
+            ],
         }
 
         for spouse in related_members_data["spouses"]:
@@ -116,6 +130,17 @@ def get_direct_relations_query(g, data):
             divorce_date = get_divorce_date(member_id, spouse_id, g)
             spouse["married"] = marriage_date
             spouse["divorced"] = divorce_date
+
+        focused_parent_ids = {p["id"] for p in related_members_data["parents"]}
+        for sibling in related_members_data["siblings"]:
+            sibling_parent_ids = {
+                str(pid)
+                for pid in g.V(sibling["id"]).inE("parent").outV().id_().toList()
+            }
+            shared = sibling_parent_ids & focused_parent_ids
+            sibling["siblingType"] = (
+                "full" if shared == focused_parent_ids else "half"
+            )
 
         return related_members_data, 200
 
