@@ -73,7 +73,7 @@ def update_member_query(g, data):
         if "death_location" in data:
             traversal.property("death_location", death_location or "")
         if "height" in data:
-            traversal.property("height", height if height is not None else "")
+            traversal.property("height", str(height) if height is not None else "")
 
         updated_member = traversal.next()
 

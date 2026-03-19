@@ -151,7 +151,7 @@ def create_spouse(g, data):
         if death_location:
             properties["death_location"] = death_location
         if height is not None:
-            properties["height"] = height
+            properties["height"] = str(height)
 
         # Create spouse vertex with partition key
         spouse = PartitionedQueryHelper.create_partitioned_vertex(

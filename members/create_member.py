@@ -77,7 +77,7 @@ def create_member_query(g, data):
         if death_location:
             properties["death_location"] = death_location
         if height is not None:
-            properties["height"] = height
+            properties["height"] = str(height)
 
         partition_key = get_current_partition()
         if not partition_key:

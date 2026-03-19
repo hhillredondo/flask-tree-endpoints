@@ -147,7 +147,7 @@ def create_child(g, data):
         if death_location:
             properties["death_location"] = death_location
         if height is not None:
-            properties["height"] = height
+            properties["height"] = str(height)
 
         # Create child vertex with partition key
         child = PartitionedQueryHelper.create_partitioned_vertex(
