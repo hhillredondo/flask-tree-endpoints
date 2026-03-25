@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
+
 from dateutil.relativedelta import relativedelta
 from gremlin_python.process.graph_traversal import __
 from gremlin_python.process.traversal import P
-
 
 fmt = "%Y-%m-%dT%H:%M:%SZ"
 DISTANT_FUTURE_DATE = datetime(9999, 1, 1)

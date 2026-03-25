@@ -1,10 +1,11 @@
 from flask import jsonify
-from utils import normalize_vertex
-import validation.dataTypes as vdt
+
 import validation.coreTreeLogic as vbl
-from validation.performValidations import perform_validations
-from partition.query_helper import PartitionedQueryHelper
+import validation.dataTypes as vdt
 from partition.middleware import get_current_partition
+from partition.query_helper import PartitionedQueryHelper
+from utils import normalize_vertex
+from validation.performValidations import perform_validations
 
 
 def create_member_query(g, data):

@@ -1,8 +1,9 @@
 import os
+from urllib.parse import urlparse
+
 import boto3
 from botocore.exceptions import ClientError
 from flask import current_app
-from urllib.parse import urlparse
 
 
 def get_s3_client():

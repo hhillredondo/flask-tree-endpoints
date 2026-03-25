@@ -1,18 +1,19 @@
 from flask import jsonify
+from gremlin_python.process.traversal import T
+
+import validation.coreTreeLogic as ctl
+import validation.dataTypes as vdt
+from partition.middleware import get_current_partition
+from partition.query_helper import PartitionedQueryHelper
 from utils import (
     get_born,
     get_died,
     get_gender,
-    get_potential_spouse_at_child_birth,
     get_parents_other_children_birth_dates,
+    get_potential_spouse_at_child_birth,
     normalize_vertex,
 )
-import validation.dataTypes as vdt
-import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
-from gremlin_python.process.traversal import T
-from partition.query_helper import PartitionedQueryHelper
-from partition.middleware import get_current_partition
 
 
 def create_child(g, data):
@@ -96,7 +97,7 @@ def create_child(g, data):
 
         potential_spouse = get_potential_spouse_at_child_birth(parent_id, born, g)
 
-        if potential_spouse != None:
+        if potential_spouse is not None:
             spouse_id = potential_spouse.get(T.id)
             spouse_gender = potential_spouse.get("gender")
             spouse_born = potential_spouse.get("born")
@@ -168,7 +169,7 @@ def create_child(g, data):
         )
 
         # If there's a potential spouse, create edge from spouse to child
-        if potential_spouse != None:
+        if potential_spouse is not None:
             spouse_id = potential_spouse.get(T.id)
             PartitionedQueryHelper.create_partitioned_edge(
                 g=g,

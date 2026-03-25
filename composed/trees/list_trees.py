@@ -1,8 +1,9 @@
 from flask import jsonify
+
 from auth.utils import get_current_user_id
-from partition.manager import partition_manager
-from roles.acl_store import acl_store, ROLE_OWNER
 from composed.trees.tree_metadata_store import tree_metadata_store
+from partition.manager import partition_manager
+from roles.acl_store import ROLE_OWNER, acl_store
 
 
 def list_user_trees(g):

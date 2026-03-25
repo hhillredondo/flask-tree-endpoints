@@ -1,4 +1,10 @@
 from flask import jsonify
+from gremlin_python.process.traversal import T
+
+import validation.coreTreeLogic as ctl
+import validation.dataTypes as vdt
+from partition.middleware import get_current_partition
+from partition.query_helper import PartitionedQueryHelper
 from utils import (
     check_date_is_in_period,
     get_born,
@@ -8,12 +14,7 @@ from utils import (
     get_parents_number,
     normalize_vertex,
 )
-import validation.dataTypes as vdt
-import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
-from gremlin_python.process.traversal import T
-from partition.query_helper import PartitionedQueryHelper
-from partition.middleware import get_current_partition
 
 
 def create_spouse(g, data):

@@ -1,10 +1,11 @@
 from functools import wraps
 from typing import Optional
 
-from flask import jsonify, request, current_app
+from flask import current_app, jsonify, request
 
 from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
+
 from .service import get_editor_lock
 
 _WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}

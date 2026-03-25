@@ -3,15 +3,15 @@
 Test script for Flask authentication middleware
 """
 
-import requests
 import json
-import sys
 import os
+import sys
 
 # Add the current directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import app
+
 
 def test_health_check():
     """Test the health check endpoint (no auth required)"""

@@ -1,7 +1,8 @@
-from flask import jsonify, g
+from flask import jsonify
+
 from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
-from roles.acl_store import acl_store, ROLE_OWNER
+from roles.acl_store import ROLE_OWNER, acl_store
 from roles.service import get_user_role, invalidate_role_cache
 
 

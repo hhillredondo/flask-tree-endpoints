@@ -1,12 +1,13 @@
-from flask import jsonify, current_app
+from flask import current_app, jsonify
 
 from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
+
 from .service import (
     acquire_editor_lock,
+    force_release_editor_lock,
     get_editor_lock,
     release_editor_lock,
-    force_release_editor_lock,
 )
 
 

@@ -1,6 +1,9 @@
 from functools import wraps
-from flask import request, g, jsonify, current_app
+
+from flask import current_app, g, jsonify, request
+
 from metrics import increment
+
 from .utils import auth_utils
 
 

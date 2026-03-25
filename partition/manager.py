@@ -1,6 +1,7 @@
-import uuid
 import re
+import uuid
 from typing import Optional, Tuple
+
 
 class PartitionManager:
     """Manages partition keys for multi-tenant tree isolation"""

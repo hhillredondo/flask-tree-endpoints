@@ -1,6 +1,8 @@
 from functools import wraps
-from flask import jsonify, g
-from .middleware import require_auth, optional_auth, require_email_verified
+
+from flask import g, jsonify
+
+from .middleware import optional_auth, require_auth, require_email_verified
 
 
 def auth_required(f):

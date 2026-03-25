@@ -2,8 +2,8 @@ import unittest
 
 from storage.s3_media import (
     build_member_base_prefix,
-    build_pic_key,
     build_photos_prefix,
+    build_pic_key,
     build_public_url,
     build_s3_url,
     parse_s3_url,

@@ -1,8 +1,11 @@
 from functools import wraps
 from typing import Optional
-from flask import request, g, jsonify, current_app
-from .manager import partition_manager
+
+from flask import current_app, g, jsonify, request
+
 from auth.utils import get_current_user_id
+
+from .manager import partition_manager
 
 
 class PartitionContext:

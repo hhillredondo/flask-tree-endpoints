@@ -1,9 +1,9 @@
 from flask import jsonify
-from utils import normalize_vertex
+
 import validation.dataTypes as vdt
-import validation.coreTreeLogic as vbl
-from validation.performValidations import perform_validations
 from partition.middleware import get_current_partition
+from utils import normalize_vertex
+from validation.performValidations import perform_validations
 
 
 def update_member_query(g, data):

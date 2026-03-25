@@ -1,0 +1,24 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# Repo root must be on sys.path so `config`, `app`, etc. import like production
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E501",   # line too long (handled by formatter if desired)
+    "W291",   # trailing whitespace (cosmetic, existing code)
+    "W292",   # no newline at end of file
+    "W293",   # blank line with whitespace (cosmetic, existing code)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Gremlin global shadows Flask's request-scoped `g` import — intentional.
+"app.py" = ["F811"]
+# Lambda factory for SigV4 transport; a `def` here is awkward.
+"gremlin_connection.py" = ["E731"]

@@ -1,9 +1,8 @@
 from flask import jsonify
 from gremlin_python.process.graph_traversal import __
-from gremlin_python.process.traversal import T
 
-from utils import get_divorce_date, get_marriage_date, normalize_vertex
 from partition.middleware import get_current_partition
+from utils import get_divorce_date, get_marriage_date, normalize_vertex
 
 
 def get_member_query(g, data):

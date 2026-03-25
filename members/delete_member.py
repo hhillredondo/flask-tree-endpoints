@@ -1,11 +1,12 @@
 from flask import jsonify
+
 from composed.trees.delete_tree import delete_tree
 from partition.middleware import get_current_partition
 from storage.s3_media import (
+    build_member_base_prefix,
     delete_prefix,
     get_media_bucket,
     get_media_prefix,
-    build_member_base_prefix,
 )
 from validation.coreTreeLogic import verify_graph_remains_connected
 

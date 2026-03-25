@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 from flask import current_app
 

@@ -1,13 +1,14 @@
 from functools import wraps
 from typing import Iterable, Optional, Set
 
-from flask import jsonify, request, g, current_app
+from flask import current_app, g, jsonify, request
 
 from auth.utils import get_current_user_id
+from metrics import increment
 from partition.middleware import get_current_tree_id
+
 from .acl_store import ROLE_EDITOR, ROLE_OWNER, ROLE_VIEWER
 from .service import get_user_role
-from metrics import increment
 
 _READ_METHODS = {"GET", "HEAD", "OPTIONS"}
 _WRITE_METHODS = {"POST", "PUT", "PATCH"}

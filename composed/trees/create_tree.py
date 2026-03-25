@@ -1,9 +1,10 @@
-from flask import jsonify, current_app
-from auth.utils import get_current_user_id
+from flask import current_app, jsonify
+
 from auth.user_tier import is_limit_exempt
+from auth.utils import get_current_user_id
+from members.create_member import create_member_query
 from partition.manager import partition_manager
 from partition.middleware import set_partition_context
-from members.create_member import create_member_query
 from roles.acl_store import ROLE_OWNER, acl_store
 
 

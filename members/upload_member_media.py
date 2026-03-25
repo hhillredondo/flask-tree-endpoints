@@ -2,11 +2,11 @@ import io
 import os
 import uuid
 
-from flask import jsonify, current_app
+from flask import current_app, jsonify
 from PIL import Image
 
-from auth.utils import get_current_user_id
 from auth.user_tier import is_limit_exempt
+from auth.utils import get_current_user_id
 from partition.middleware import get_current_partition
 from storage.s3_media import (
     build_documents_prefix,
@@ -22,7 +22,6 @@ from storage.s3_media import (
     parse_s3_url,
     upload_bytes,
 )
-
 
 _FORMAT_TO_MIME = {
     "JPEG": "image/jpeg",

@@ -1,13 +1,13 @@
 import logging
 import os
 import ssl
+
 from boto3 import Session
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from gremlin_python.driver.aiohttp.transport import AiohttpTransport
 from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
 from gremlin_python.process.anonymous_traversal import traversal
-
 
 logger = logging.getLogger(__name__)
 

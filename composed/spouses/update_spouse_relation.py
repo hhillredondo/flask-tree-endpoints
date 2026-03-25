@@ -1,15 +1,16 @@
 from flask import jsonify
+from gremlin_python.process.graph_traversal import __
+
+import validation.coreTreeLogic as ctl
+import validation.dataTypes as vdt
+from partition.query_helper import PartitionedQueryHelper
 from utils import (
     get_born,
     get_common_children_birth_dates,
     get_marriage_date,
     get_marriages,
 )
-import validation.dataTypes as vdt
-import validation.coreTreeLogic as ctl
 from validation.performValidations import perform_validations
-from gremlin_python.process.graph_traversal import __
-from partition.query_helper import PartitionedQueryHelper
 
 
 def update_spouse_relation(g, data):

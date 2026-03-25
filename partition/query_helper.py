@@ -1,7 +1,7 @@
-from gremlin_python.process.graph_traversal import __
-from gremlin_python.process.traversal import T
-from .middleware import get_current_partition
 from flask import jsonify
+from gremlin_python.process.graph_traversal import __
+
+from .middleware import get_current_partition
 
 
 class PartitionedQueryHelper:
@@ -252,7 +252,7 @@ class PartitionedQueryHelper:
             raise ValueError("No partition key available")
         
         # Delete all edges in partition
-        edge_count = g.E().has("_partitionKey", partition_key).drop().iterate()
+        g.E().has("_partitionKey", partition_key).drop().iterate()
         
         # Delete all vertices in partition
         vertex_count = g.V().has("_partitionKey", partition_key).drop().iterate()

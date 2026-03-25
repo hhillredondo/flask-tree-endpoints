@@ -3,10 +3,6 @@
 Test script for Flask partitioning middleware
 """
 
-import requests
-import json
-import sys
-import os
 
 def test_partitioning_system():
     """Test the partitioning system"""

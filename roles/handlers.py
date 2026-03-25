@@ -1,9 +1,10 @@
-from flask import jsonify, request, current_app
+from flask import current_app, jsonify, request
 
-from auth.cognito import get_user_sub_by_email, get_user_email_by_sub
+from auth.cognito import get_user_email_by_sub, get_user_sub_by_email
 from auth.utils import get_current_user_id
 from partition.middleware import get_current_tree_id
-from .acl_store import ROLE_EDITOR, ROLE_VIEWER, ROLE_OWNER, acl_store
+
+from .acl_store import ROLE_EDITOR, ROLE_OWNER, ROLE_VIEWER, acl_store
 from .service import invalidate_role_cache
 
 

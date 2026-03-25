@@ -1,8 +1,8 @@
-from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
 from gremlin_python.process.graph_traversal import __, elementMap, otherV
 from gremlin_python.process.traversal import T
-
 
 fmt = "%Y-%m-%dT%H:%M:%SZ"
 

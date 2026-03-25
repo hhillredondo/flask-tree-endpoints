@@ -1,4 +1,6 @@
 Flask==2.3.2
+# Flask 2.3's test client uses werkzeug.__version__; Werkzeug 3 removed it — pin 2.x until Flask is upgraded.
+Werkzeug>=2.3.7,<3.0
 flask-cors==4.0.0
 python-jose[cryptography]==3.3.0
 requests==2.31.0

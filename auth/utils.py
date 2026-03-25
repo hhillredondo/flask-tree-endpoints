@@ -1,10 +1,9 @@
 import os
-import json
+from typing import Any, Dict, Optional
+
 import requests
-from typing import Optional, Dict, Any
-from jose import jwt, JWTError
 from flask import current_app, g
-from functools import wraps
+from jose import JWTError, jwt
 
 
 class AmplifyAuthUtils:

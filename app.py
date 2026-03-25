@@ -1,47 +1,49 @@
-from flask import Flask, jsonify, request, g
+import logging
+import os
+
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
-from composed.children.create_child import create_child
-from composed.parents.create_parent import create_parent
-from composed.spouses.update_spouse_relation import update_spouse_relation
-from composed.spouses.create_spouse import create_spouse
-from composed.trees.create_tree import create_tree
-from composed.trees.delete_tree import delete_tree
-from composed.trees.quit_tree import quit_tree
-from composed.trees.list_trees import list_user_trees, list_owned_trees
-from gremlin_connection import create_gremlin_connection
-from members.update_member import update_member_query
-from members.upload_member_media import (
-    upload_member_pic,
-    upload_member_photos,
-    upload_member_documents,
-    get_member_pic_url,
-    get_member_photo_urls,
-    get_member_document_urls,
-)
-from members.get_member import (
-    get_direct_relations_query,
-    get_member_query,
-    get_all_members_query,
-)
-from members.delete_member import delete_member_query
+
 from auth.decorators import auth_required
 from auth.delete_account import delete_account
 from auth.utils import get_current_user_id, get_current_user_info
-from partition.middleware import require_partition, get_current_partition
-from roles.acl_store import ROLE_OWNER, ROLE_EDITOR, ROLE_VIEWER
-from roles.handlers import list_roles, add_role, remove_role
-from roles.middleware import require_role
+from composed.children.create_child import create_child
+from composed.parents.create_parent import create_parent
+from composed.spouses.create_spouse import create_spouse
+from composed.spouses.update_spouse_relation import update_spouse_relation
+from composed.trees.create_tree import create_tree
+from composed.trees.delete_tree import delete_tree
+from composed.trees.list_trees import list_owned_trees, list_user_trees
+from composed.trees.quit_tree import quit_tree
+from config.settings import get_config
 from editor_lock.handlers import (
-    get_lock_status,
     acquire_lock,
-    release_lock,
     force_release_lock,
+    get_lock_status,
+    release_lock,
 )
 from editor_lock.middleware import require_editor_lock
-from config.settings import get_config
+from gremlin_connection import create_gremlin_connection
+from members.delete_member import delete_member_query
+from members.get_member import (
+    get_all_members_query,
+    get_direct_relations_query,
+    get_member_query,
+)
+from members.update_member import update_member_query
+from members.upload_member_media import (
+    get_member_document_urls,
+    get_member_photo_urls,
+    get_member_pic_url,
+    upload_member_documents,
+    upload_member_photos,
+    upload_member_pic,
+)
 from metrics import snapshot
-import logging
-import os
+from partition.middleware import get_current_partition, require_partition
+from roles.acl_store import ROLE_EDITOR, ROLE_OWNER, ROLE_VIEWER
+from roles.handlers import add_role, list_roles, remove_role
+from roles.middleware import require_role
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

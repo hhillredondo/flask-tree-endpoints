@@ -1,4 +1,4 @@
-from flask import jsonify, current_app
+from flask import current_app, jsonify
 
 from auth.cognito import delete_user_by_sub
 from auth.utils import get_current_user_id

@@ -1,11 +1,11 @@
 from flask import jsonify
-from composed.spouses.create_spouse import create_spouse
-from utils import get_born, get_parents_number, normalize_vertex
-import validation.dataTypes as vdt
+
 import validation.coreTreeLogic as ctl
-from validation.performValidations import perform_validations
-from partition.query_helper import PartitionedQueryHelper
+import validation.dataTypes as vdt
 from partition.middleware import get_current_partition
+from partition.query_helper import PartitionedQueryHelper
+from utils import get_born, get_parents_number, normalize_vertex
+from validation.performValidations import perform_validations
 
 
 def create_parent(g, data):
