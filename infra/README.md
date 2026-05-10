@@ -6,24 +6,20 @@ Region `eu-central-1`, account `AWS_ACCOUNT_ID`.
 
 ## Stacks
 
-| Stack | Resources | Slice |
-| ----- | --------- | ----- |
-| `TreesNetworkingStack` | VPC, 4 subnets, IGW, route tables, routes, subnet associations, `task-sg`, `neptune-sg` | A |
-| `TreesDataStack`       | Neptune subnet group, 2 Neptune clusters + instances (db.t4g.medium), 2 SSM params (`GREMLIN_ENDPOINT_*`) | B |
-| `TreesComputeStack`    | ECR, 2 ECS clusters/services/task-defs, log groups, VPC Link, 2 HTTP APIs, 2 CloudFront distros, hosted zone, 3 IAM roles | C |
-| `TreesSchedulerStack`  | 4 EventBridge schedules + scheduler IAM role | D |
+| Stack | Region | Resources |
+| ----- | ------ | --------- |
+| `TreesNetworkingStack` | eu-central-1 | VPC, 4 subnets, IGW, route tables, routes, subnet associations, `task-sg`, `neptune-sg` |
+| `TreesDataStack`       | eu-central-1 | Neptune subnet group, 2 Neptune clusters + instances (db.t4g.medium), 2 SSM params (`GREMLIN_ENDPOINT_*`) |
+| `TreesComputeStack`    | eu-central-1 | ECR, 2 ECS clusters/services/task-defs, log groups, VPC Link, 2 HTTP APIs + stages + deployments, 2 CloudFront distros, hosted zone, 2 R53 ALIAS records, 3 IAM roles |
+| `TreesSchedulerStack`  | eu-central-1 | 4 EventBridge schedules + scheduler IAM role |
+| `TreesEdgeStack`       | us-east-1    | CloudFront WAFv2 WebACL (imported); 2 ACM certs (in code, not deployed in current account — see below) |
 
-`bin/infra.ts` instantiates all four against `eu-central-1`.
+`bin/infra.ts` instantiates all five.
 
 ## What's NOT in IaC (and why)
 
-These don't have CFN-importable types, so they remain console-managed:
-
-- **AWS Cloud Map** (`internal.trees-lab.com.` namespace + `prod-api`/`dev-api` services) — `AWS::ServiceDiscovery::*` isn't supported by IaC Generator. The underlying R53 hosted zone (`Z005424127FR8DAXCLUAZ`) is auto-created by Cloud Map.
-- **API Gateway HTTP API stages** (`$default` for both APIs) — `AWS::ApiGatewayV2::Stage` not picked up by the scan.
-- **ACM certs** for CloudFront live in `us-east-1`. Cross-region resources require a separate stack (deferred).
-- **WAFv2 WebACL** (`CreatedByCloudFront-0ac1ed8d`) — auto-created by CloudFront console, console-managed.
-- **Route 53 record sets** for `api.trees-lab.com` and `dev-api.trees-lab.com` — only the hosted zone itself is imported; the ALIAS records can be added as `CfnRecordSet` constructs in a follow-up.
+- **ACM certs** in `us-east-1` — `AWS::CertificateManager::Certificate` is not CFN-importable. The certs are defined in `TreesEdgeStack` (so a clean-slate-rebuild creates them via DNS validation against the hosted zone), but the *live* certs the production CloudFront uses are still console-managed. Phase B/C will swap CloudFront's `viewerCertificate` to the CDK-managed cert ARNs via cross-region references.
+- **Cloud Map** (`internal.trees-lab.com.` namespace + `prod-api`/`dev-api` services) — `AWS::ServiceDiscovery::*` isn't importable. ECS service registry and HTTP API `integrationUri` reference these ARNs, so adopting them requires a coordinated swap (ECS service replacement + integration update). Deferred to Phase B/C alongside the refs refactor.
 
 ## Deploying with import
 
@@ -59,11 +55,19 @@ aws cloudformation execute-change-set \
 
 After each stack's IMPORT completes, run `cdk diff <Stack>` to confirm there's no drift before moving to the next.
 
-## After all four stacks are imported
+## After all stacks are imported
 
 - Future changes: edit the stack `.ts` files, run `cdk deploy <Stack>` (no `--import-existing-resources`).
-- Add the missing pieces (Cloud Map, ACM us-east-1, R53 records) as fresh CDK resources in a new follow-up stack — no import dance needed for those since they're create-not-import.
 - Refactor the auto-generated `Cfn*` constructs to L2 constructs incrementally if desired.
+
+## Phase A history (2026-05-10)
+
+Closed the smaller IaC gaps after the initial 51-resource import:
+
+- **R53 ALIAS records** (`api.trees-lab.com`, `dev-api.trees-lab.com`) — `AWS::Route53::RecordSet` is not importable, so we deleted the live records and let `cdk deploy TreesComputeStack` create them. Brief NXDOMAIN window during deploy, full restore in <1 min.
+- **HTTP API `$default` stages + initial deployments** — `AWS::ApiGatewayV2::Stage` is not importable. Same approach: deleted live stages, `cdk deploy` recreated them with explicit `CfnDeployment` resources (`autoDeploy: true` alone won't seed a deployment for a freshly-created stage).
+- **WAFv2 WebACL (prod CloudFront)** — `AWS::WAFv2::WebACL` IS importable. Created `TreesEdgeStack` in `us-east-1` and ran `create-change-set --change-set-type IMPORT` for it.
+- **us-east-1 nuance**: `TreesEdgeStack` uses `cdk.CliCredentialsStackSynthesizer()` because the `Hugo-Amplify` IAM user lacks `ecr:CreateRepository`, so a normal `cdk bootstrap` rolls back. The synthesizer skips the bootstrap version parameter, letting raw `aws cloudformation create-change-set` run without bootstrap.
 
 ## Caveats from the migrate generator
 

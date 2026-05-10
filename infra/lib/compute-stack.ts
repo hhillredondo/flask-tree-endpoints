@@ -919,5 +919,61 @@ export class TreesComputeStack extends cdk.Stack {
       name: 'trees-vpc-link',
     });
     treesVpcLink.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
+    const httpApiDevDeployment = new apigatewayv2.CfnDeployment(this, 'HttpApiDevDeployment', {
+      apiId: httpApiDev.ref,
+      description: 'Initial deployment',
+    });
+    httpApiDevDeployment.addDependency(httpApiDevRoute);
+    httpApiDevDeployment.addDependency(httpApiDevIntegration);
+
+    const httpApiDevStage = new apigatewayv2.CfnStage(this, 'HttpApiDevStage', {
+      apiId: httpApiDev.ref,
+      stageName: '$default',
+      autoDeploy: true,
+      deploymentId: httpApiDevDeployment.ref,
+    });
+    httpApiDevStage.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
+    const httpApiProdDeployment = new apigatewayv2.CfnDeployment(this, 'HttpApiProdDeployment', {
+      apiId: httpApiProd.ref,
+      description: 'Initial deployment',
+    });
+    httpApiProdDeployment.addDependency(httpApiProdRoute);
+    httpApiProdDeployment.addDependency(httpApiProdIntegration);
+
+    const httpApiProdStage = new apigatewayv2.CfnStage(this, 'HttpApiProdStage', {
+      apiId: httpApiProd.ref,
+      stageName: '$default',
+      autoDeploy: true,
+      deploymentId: httpApiProdDeployment.ref,
+    });
+    httpApiProdStage.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
+    const cloudFrontHostedZoneId = 'Z2FDTNDATAQYW2';
+
+    const recordSetApiProd = new route53.CfnRecordSet(this, 'RecordSetApiProd', {
+      hostedZoneId: treesLabZone.ref,
+      name: 'api.trees-lab.com.',
+      type: 'A',
+      aliasTarget: {
+        hostedZoneId: cloudFrontHostedZoneId,
+        dnsName: cloudFrontProd.attrDomainName,
+        evaluateTargetHealth: false,
+      },
+    });
+    recordSetApiProd.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
+    const recordSetApiDev = new route53.CfnRecordSet(this, 'RecordSetApiDev', {
+      hostedZoneId: treesLabZone.ref,
+      name: 'dev-api.trees-lab.com.',
+      type: 'A',
+      aliasTarget: {
+        hostedZoneId: cloudFrontHostedZoneId,
+        dnsName: cloudFrontDev.attrDomainName,
+        evaluateTargetHealth: false,
+      },
+    });
+    recordSetApiDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
   }
 }
