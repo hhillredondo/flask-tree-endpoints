@@ -20,7 +20,7 @@ export class TreesSchedulerStack extends cdk.Stack {
           maximumEventAgeInSeconds: 86400,
           maximumRetryAttempts: 185,
         },
-        roleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/trees-scheduler-prod',
+        roleArn: cdk.Lazy.string({ produce: () => treesSchedulerRole.attrArn }),
       },
       state: 'ENABLED',
       flexibleTimeWindow: {
@@ -41,7 +41,7 @@ export class TreesSchedulerStack extends cdk.Stack {
           maximumEventAgeInSeconds: 86400,
           maximumRetryAttempts: 185,
         },
-        roleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/trees-scheduler-prod',
+        roleArn: cdk.Lazy.string({ produce: () => treesSchedulerRole.attrArn }),
       },
       state: 'ENABLED',
       flexibleTimeWindow: {
@@ -62,7 +62,7 @@ export class TreesSchedulerStack extends cdk.Stack {
           maximumEventAgeInSeconds: 86400,
           maximumRetryAttempts: 185,
         },
-        roleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/trees-scheduler-prod',
+        roleArn: cdk.Lazy.string({ produce: () => treesSchedulerRole.attrArn }),
       },
       state: 'ENABLED',
       flexibleTimeWindow: {
@@ -83,7 +83,7 @@ export class TreesSchedulerStack extends cdk.Stack {
           maximumEventAgeInSeconds: 86400,
           maximumRetryAttempts: 185,
         },
-        roleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/trees-scheduler-prod',
+        roleArn: cdk.Lazy.string({ produce: () => treesSchedulerRole.attrArn }),
       },
       state: 'ENABLED',
       flexibleTimeWindow: {
