@@ -143,7 +143,7 @@ export class TreesDataStack extends cdk.Stack {
     neptuneSubnetGroup.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const ssmGremlinEndpointDev = new ssm.CfnParameter(this, 'SsmGremlinEndpointDev', {
-      value: 'trees-neptune-dev.cluster-cluauo8uat5l.eu-central-1.neptune.amazonaws.com',
+      value: neptuneClusterDev.attrEndpoint,
       dataType: 'text',
       type: 'String',
       name: '/trees/api/GREMLIN_ENDPOINT_DEV',
@@ -151,7 +151,7 @@ export class TreesDataStack extends cdk.Stack {
     ssmGremlinEndpointDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const ssmGremlinEndpointProd = new ssm.CfnParameter(this, 'SsmGremlinEndpointProd', {
-      value: 'trees-neptune-prod.cluster-cluauo8uat5l.eu-central-1.neptune.amazonaws.com',
+      value: neptuneClusterProd.attrEndpoint,
       dataType: 'text',
       type: 'String',
       name: '/trees/api/GREMLIN_ENDPOINT_PROD',

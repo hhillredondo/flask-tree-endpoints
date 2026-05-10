@@ -202,7 +202,7 @@ export class TreesComputeStack extends cdk.Stack {
       healthCheckGracePeriodSeconds: 0,
       enableEcsManagedTags: false,
       enableExecuteCommand: false,
-      cluster: 'trees-api-dev',
+      cluster: ecsClusterDev.ref,
       desiredCount: 0,
       deploymentController: {
         type: 'ECS',
@@ -218,7 +218,7 @@ export class TreesComputeStack extends cdk.Stack {
       availabilityZoneRebalancing: 'ENABLED',
       role: 'arn:aws:iam::AWS_ACCOUNT_ID:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS',
       schedulingStrategy: 'REPLICA',
-      taskDefinition: 'arn:aws:ecs:eu-central-1:AWS_ACCOUNT_ID:task-definition/trees-api-task-dev:2',
+      taskDefinition: cdk.Lazy.string({ produce: () => ecsTaskDefDev.ref }),
       serviceName: 'trees-api-svc-dev',
       networkConfiguration: {
         awsvpcConfiguration: {
@@ -250,7 +250,7 @@ export class TreesComputeStack extends cdk.Stack {
       healthCheckGracePeriodSeconds: 0,
       enableEcsManagedTags: false,
       enableExecuteCommand: false,
-      cluster: 'trees-api-prod',
+      cluster: ecsClusterProd.ref,
       desiredCount: 1,
       deploymentController: {
         type: 'ECS',
@@ -266,7 +266,7 @@ export class TreesComputeStack extends cdk.Stack {
       availabilityZoneRebalancing: 'ENABLED',
       role: 'arn:aws:iam::AWS_ACCOUNT_ID:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS',
       schedulingStrategy: 'REPLICA',
-      taskDefinition: 'arn:aws:ecs:eu-central-1:AWS_ACCOUNT_ID:task-definition/trees-api-task-prod:2',
+      taskDefinition: cdk.Lazy.string({ produce: () => ecsTaskDefProd.ref }),
       serviceName: 'trees-api-svc-prod',
       networkConfiguration: {
         awsvpcConfiguration: {
@@ -294,14 +294,14 @@ export class TreesComputeStack extends cdk.Stack {
     ecsServiceProd.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const ecsTaskDefDev = new ecs.CfnTaskDefinition(this, 'EcsTaskDefDev', {
-      taskRoleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/ecsTaskRoleNeptuneConnect',
+      taskRoleArn: cdk.Lazy.string({ produce: () => ecsTaskRoleNeptuneConnect.attrArn }),
       memory: '1024',
       cpu: '256',
       requiresCompatibilities: [
         'FARGATE',
       ],
       networkMode: 'awsvpc',
-      executionRoleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/ecsTaskExecutionRole',
+      executionRoleArn: cdk.Lazy.string({ produce: () => ecsTaskExecutionRole.attrArn }),
       runtimePlatform: {
         operatingSystemFamily: 'LINUX',
         cpuArchitecture: 'X86_64',
@@ -335,11 +335,11 @@ export class TreesComputeStack extends cdk.Stack {
             },
           ],
           cpu: 0,
-          image: 'AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/flask-tree-api:latest',
+          image: cdk.Lazy.string({ produce: () => `${flaskTreeApiEcr.attrRepositoryUri}:latest` }),
           essential: true,
           logConfiguration: {
             options: {
-              'awslogs-group': '/ecs/trees-api-dev',
+              'awslogs-group': ecsLogGroupDev.ref,
               'awslogs-create-group': 'true',
               'awslogs-region': 'eu-central-1',
               'awslogs-stream-prefix': 'ecs',
@@ -419,14 +419,14 @@ export class TreesComputeStack extends cdk.Stack {
     ecsTaskDefDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const ecsTaskDefProd = new ecs.CfnTaskDefinition(this, 'EcsTaskDefProd', {
-      taskRoleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/ecsTaskRoleNeptuneConnect',
+      taskRoleArn: cdk.Lazy.string({ produce: () => ecsTaskRoleNeptuneConnect.attrArn }),
       memory: '1024',
       cpu: '256',
       requiresCompatibilities: [
         'FARGATE',
       ],
       networkMode: 'awsvpc',
-      executionRoleArn: 'arn:aws:iam::AWS_ACCOUNT_ID:role/ecsTaskExecutionRole',
+      executionRoleArn: cdk.Lazy.string({ produce: () => ecsTaskExecutionRole.attrArn }),
       runtimePlatform: {
         operatingSystemFamily: 'LINUX',
         cpuArchitecture: 'X86_64',
@@ -460,11 +460,11 @@ export class TreesComputeStack extends cdk.Stack {
             },
           ],
           cpu: 0,
-          image: 'AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com/flask-tree-api:latest',
+          image: cdk.Lazy.string({ produce: () => `${flaskTreeApiEcr.attrRepositoryUri}:latest` }),
           essential: true,
           logConfiguration: {
             options: {
-              'awslogs-group': '/ecs/trees-api-prod',
+              'awslogs-group': ecsLogGroupProd.ref,
               'awslogs-create-group': 'true',
               'awslogs-region': 'eu-central-1',
               'awslogs-stream-prefix': 'ecs',
@@ -842,6 +842,18 @@ export class TreesComputeStack extends cdk.Stack {
     });
     githubActionsFlaskDeployRole.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
+    const treesVpcLink = new apigatewayv2.CfnVpcLink(this, 'TreesVpcLink', {
+      subnetIds: [
+        'subnet-0b0add3a8dbedf82e',
+        'subnet-01e3a267b85c87b0c',
+      ],
+      securityGroupIds: [
+        'sg-015635a1eae8dcd12',
+      ],
+      name: 'trees-vpc-link',
+    });
+    treesVpcLink.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
     const httpApiDev = new apigatewayv2.CfnApi(this, 'HttpApiDev', {
       routeSelectionExpression: '$request.method $request.path',
       disableExecuteApiEndpoint: false,
@@ -851,23 +863,23 @@ export class TreesComputeStack extends cdk.Stack {
     httpApiDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const httpApiDevIntegration = new apigatewayv2.CfnIntegration(this, 'HttpApiDevIntegration', {
-      connectionId: '236ati',
+      apiId: httpApiDev.ref,
+      connectionId: treesVpcLink.ref,
       integrationUri: 'arn:aws:servicediscovery:eu-central-1:AWS_ACCOUNT_ID:service/srv-apsql6xdfn7a3jtp',
       payloadFormatVersion: '1.0',
       connectionType: 'VPC_LINK',
       timeoutInMillis: 30000,
-      apiId: 'xhstoutar6',
       integrationMethod: 'ANY',
       integrationType: 'HTTP_PROXY',
     });
     httpApiDevIntegration.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const httpApiDevRoute = new apigatewayv2.CfnRoute(this, 'HttpApiDevRoute', {
-      target: 'integrations/50ah6rr',
+      apiId: httpApiDev.ref,
+      target: cdk.Fn.join('/', ['integrations', httpApiDevIntegration.ref]),
       apiKeyRequired: false,
       routeKey: 'ANY /{proxy+}',
       authorizationType: 'NONE',
-      apiId: 'xhstoutar6',
     });
     httpApiDevRoute.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
@@ -880,23 +892,23 @@ export class TreesComputeStack extends cdk.Stack {
     httpApiProd.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const httpApiProdIntegration = new apigatewayv2.CfnIntegration(this, 'HttpApiProdIntegration', {
-      connectionId: '236ati',
+      apiId: httpApiProd.ref,
+      connectionId: treesVpcLink.ref,
       integrationUri: 'arn:aws:servicediscovery:eu-central-1:AWS_ACCOUNT_ID:service/srv-we3dm4um3mwub62m',
       payloadFormatVersion: '1.0',
       connectionType: 'VPC_LINK',
       timeoutInMillis: 30000,
-      apiId: '68e9c5mnsa',
       integrationMethod: 'ANY',
       integrationType: 'HTTP_PROXY',
     });
     httpApiProdIntegration.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const httpApiProdRoute = new apigatewayv2.CfnRoute(this, 'HttpApiProdRoute', {
-      target: 'integrations/ryxabcf',
+      apiId: httpApiProd.ref,
+      target: cdk.Fn.join('/', ['integrations', httpApiProdIntegration.ref]),
       apiKeyRequired: false,
       routeKey: 'ANY /{proxy+}',
       authorizationType: 'NONE',
-      apiId: '68e9c5mnsa',
     });
     httpApiProdRoute.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
@@ -907,18 +919,6 @@ export class TreesComputeStack extends cdk.Stack {
       name: 'trees-lab.com.',
     });
     treesLabZone.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
-
-    const treesVpcLink = new apigatewayv2.CfnVpcLink(this, 'TreesVpcLink', {
-      subnetIds: [
-        'subnet-0b0add3a8dbedf82e',
-        'subnet-01e3a267b85c87b0c',
-      ],
-      securityGroupIds: [
-        'sg-015635a1eae8dcd12',
-      ],
-      name: 'trees-vpc-link',
-    });
-    treesVpcLink.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
     const httpApiDevDeployment = new apigatewayv2.CfnDeployment(this, 'HttpApiDevDeployment', {
       apiId: httpApiDev.ref,
