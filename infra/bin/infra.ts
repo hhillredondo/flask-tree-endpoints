@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from "aws-cdk-lib";
+import { TreesPersistentStack } from "../lib/persistent-stack";
 import { TreesNetworkingStack } from "../lib/networking-stack";
 import { TreesDataStack } from "../lib/data-stack";
 import { TreesComputeStack } from "../lib/compute-stack";
@@ -12,11 +13,41 @@ const account = "AWS_ACCOUNT_ID";
 const env = { account, region: "eu-central-1" };
 const usEast1Env = { account, region: "us-east-1" };
 
-new TreesNetworkingStack(app, "TreesNetworkingStack", { env });
-new TreesDataStack(app, "TreesDataStack", { env });
-new TreesComputeStack(app, "TreesComputeStack", { env });
-new TreesSchedulerStack(app, "TreesSchedulerStack", { env });
-new TreesEdgeStack(app, "TreesEdgeStack", {
+const persistent = new TreesPersistentStack(app, "TreesPersistentStack", { env });
+
+const edge = new TreesEdgeStack(app, "TreesEdgeStack", {
   env: usEast1Env,
+  crossRegionReferences: true,
   synthesizer: new cdk.CliCredentialsStackSynthesizer(),
+});
+
+const networking = new TreesNetworkingStack(app, "TreesNetworkingStack", { env });
+
+const data = new TreesDataStack(app, "TreesDataStack", {
+  env,
+  privateSubnets: [networking.privateSubnetA, networking.privateSubnetB],
+  neptuneSg: networking.neptuneSg,
+});
+
+const compute = new TreesComputeStack(app, "TreesComputeStack", {
+  env,
+  crossRegionReferences: true,
+  vpc: networking.vpc,
+  publicSubnets: [networking.publicSubnetA, networking.publicSubnetB],
+  privateSubnets: [networking.privateSubnetA, networking.privateSubnetB],
+  taskSg: networking.taskSg,
+  clusterDev: data.clusterDev,
+  clusterProd: data.clusterProd,
+  hostedZone: persistent.hostedZone,
+  ecrRepository: persistent.ecrRepository,
+  certApiProdArn: edge.certApiProd.ref,
+  certApiDevArn: edge.certApiDev.ref,
+  webAclArn: edge.webAcl.attrArn,
+});
+
+new TreesSchedulerStack(app, "TreesSchedulerStack", {
+  env,
+  clusterProd: compute.clusterProd,
+  serviceProd: compute.serviceProd,
+  neptuneClusterProd: data.clusterProd,
 });

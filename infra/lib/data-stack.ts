@@ -1,161 +1,102 @@
 import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as neptune from 'aws-cdk-lib/aws-neptune';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 
 export interface TreesDataStackProps extends cdk.StackProps {
+  privateSubnets: ec2.CfnSubnet[];
+  neptuneSg: ec2.CfnSecurityGroup;
 }
 
 export class TreesDataStack extends cdk.Stack {
-  public constructor(scope: cdk.App, id: string, props: TreesDataStackProps = {}) {
+  public readonly clusterDev: neptune.CfnDBCluster;
+  public readonly clusterProd: neptune.CfnDBCluster;
+
+  public constructor(scope: cdk.App, id: string, props: TreesDataStackProps) {
     super(scope, id, props);
 
-    // Resources
-    const neptuneClusterDev = new neptune.CfnDBCluster(this, 'NeptuneClusterDev', {
-      storageEncrypted: true,
+    const subnetGroup = new neptune.CfnDBSubnetGroup(this, 'NeptuneSubnetGroup', {
+      dbSubnetGroupName: 'neptune-subnet-group',
+      dbSubnetGroupDescription: 'neptune subnet group for trees project db',
+      subnetIds: props.privateSubnets.map((s) => s.ref),
+    });
+
+    const clusterDefaults = {
       engineVersion: '1.4.7.0',
-      kmsKeyId: 'arn:aws:kms:eu-central-1:AWS_ACCOUNT_ID:key/fd1505d9-aacf-463c-a6ac-4d2106e7b9a3',
-      associatedRoles: [
-      ],
-      availabilityZones: [
-        'eu-central-1a',
-        'eu-central-1c',
-        'eu-central-1b',
-      ],
+      iamAuthEnabled: true,
+      dbPort: 8182,
+      dbClusterParameterGroupName: 'default.neptune1.4',
+      dbSubnetGroupName: subnetGroup.ref,
+      vpcSecurityGroupIds: [props.neptuneSg.ref],
+      backupRetentionPeriod: 1,
+      storageEncrypted: true,
+      deletionProtection: false,
+    };
+
+    this.clusterDev = new neptune.CfnDBCluster(this, 'NeptuneClusterDev', {
+      ...clusterDefaults,
       dbClusterIdentifier: 'trees-neptune-dev',
       preferredMaintenanceWindow: 'thu:23:31-fri:00:01',
-      iamAuthEnabled: true,
-      dbSubnetGroupName: 'neptune-subnet-group',
-      deletionProtection: false,
       preferredBackupWindow: '22:35-23:05',
-      dbPort: 8182,
-      vpcSecurityGroupIds: [
-        'sg-0229c88c446cba89c',
-      ],
-      copyTagsToSnapshot: false,
-      dbClusterParameterGroupName: 'default.neptune1.4',
-      backupRetentionPeriod: 1,
       tags: [
-        {
-          value: 'trees-neptune-dev',
-          key: 'Name',
-        },
-        {
-          value: 'dev',
-          key: 'Env',
-        },
-      ],
-      enableCloudwatchLogsExports: [
+        { key: 'Name', value: 'trees-neptune-dev' },
+        { key: 'Env', value: 'dev' },
       ],
     });
-    neptuneClusterDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
-    const neptuneClusterProd = new neptune.CfnDBCluster(this, 'NeptuneClusterProd', {
-      storageEncrypted: true,
-      engineVersion: '1.4.7.0',
-      kmsKeyId: 'arn:aws:kms:eu-central-1:AWS_ACCOUNT_ID:key/fd1505d9-aacf-463c-a6ac-4d2106e7b9a3',
-      associatedRoles: [
-      ],
-      availabilityZones: [
-        'eu-central-1a',
-        'eu-central-1c',
-        'eu-central-1b',
-      ],
+    this.clusterProd = new neptune.CfnDBCluster(this, 'NeptuneClusterProd', {
+      ...clusterDefaults,
       dbClusterIdentifier: 'trees-neptune-prod',
       preferredMaintenanceWindow: 'sat:04:10-sat:04:40',
-      iamAuthEnabled: true,
-      dbSubnetGroupName: 'neptune-subnet-group',
-      deletionProtection: false,
       preferredBackupWindow: '01:54-02:24',
-      dbPort: 8182,
-      vpcSecurityGroupIds: [
-        'sg-0229c88c446cba89c',
-      ],
-      copyTagsToSnapshot: false,
-      dbClusterParameterGroupName: 'default.neptune1.4',
-      backupRetentionPeriod: 1,
       tags: [
-        {
-          value: 'trees-neptune-prod',
-          key: 'Name',
-        },
-        {
-          value: 'prod',
-          key: 'Env',
-        },
-      ],
-      enableCloudwatchLogsExports: [
+        { key: 'Name', value: 'trees-neptune-prod' },
+        { key: 'Env', value: 'prod' },
       ],
     });
-    neptuneClusterProd.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
-    const neptuneInstanceDev = new neptune.CfnDBInstance(this, 'NeptuneInstanceDev', {
-      dbParameterGroupName: 'default.neptune1.4',
+    new neptune.CfnDBInstance(this, 'NeptuneInstanceDev', {
+      dbClusterIdentifier: this.clusterDev.ref,
+      dbInstanceIdentifier: 'trees-neptune-dev-1',
       dbInstanceClass: 'db.t4g.medium',
-      dbClusterIdentifier: 'trees-neptune-dev',
+      dbParameterGroupName: 'default.neptune1.4',
+      dbSubnetGroupName: subnetGroup.ref,
       availabilityZone: 'eu-central-1b',
       preferredMaintenanceWindow: 'sun:01:45-sun:02:15',
       autoMinorVersionUpgrade: true,
-      dbSubnetGroupName: 'neptune-subnet-group',
-      dbInstanceIdentifier: 'trees-neptune-dev-1',
       tags: [
-        {
-          value: 'trees-neptune-dev-1',
-          key: 'Name',
-        },
-        {
-          value: 'dev',
-          key: 'Env',
-        },
+        { key: 'Name', value: 'trees-neptune-dev-1' },
+        { key: 'Env', value: 'dev' },
       ],
     });
-    neptuneInstanceDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
-    const neptuneInstanceProd = new neptune.CfnDBInstance(this, 'NeptuneInstanceProd', {
-      dbParameterGroupName: 'default.neptune1.4',
+    new neptune.CfnDBInstance(this, 'NeptuneInstanceProd', {
+      dbClusterIdentifier: this.clusterProd.ref,
+      dbInstanceIdentifier: 'trees-neptune-prod-1',
       dbInstanceClass: 'db.t4g.medium',
-      dbClusterIdentifier: 'trees-neptune-prod',
+      dbParameterGroupName: 'default.neptune1.4',
+      dbSubnetGroupName: subnetGroup.ref,
       availabilityZone: 'eu-central-1b',
       preferredMaintenanceWindow: 'sat:22:21-sat:22:51',
       autoMinorVersionUpgrade: true,
-      dbSubnetGroupName: 'neptune-subnet-group',
-      dbInstanceIdentifier: 'trees-neptune-prod-1',
       tags: [
-        {
-          value: 'trees-neptune-prod-1',
-          key: 'Name',
-        },
-        {
-          value: 'prod',
-          key: 'Env',
-        },
+        { key: 'Name', value: 'trees-neptune-prod-1' },
+        { key: 'Env', value: 'prod' },
       ],
     });
-    neptuneInstanceProd.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
-    const neptuneSubnetGroup = new neptune.CfnDBSubnetGroup(this, 'NeptuneSubnetGroup', {
-      dbSubnetGroupDescription: 'neptune subnet group for trees project db',
-      subnetIds: [
-        'subnet-0b0add3a8dbedf82e',
-        'subnet-01e3a267b85c87b0c',
-      ],
-      dbSubnetGroupName: 'neptune-subnet-group',
-    });
-    neptuneSubnetGroup.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
-
-    const ssmGremlinEndpointDev = new ssm.CfnParameter(this, 'SsmGremlinEndpointDev', {
-      value: neptuneClusterDev.attrEndpoint,
-      dataType: 'text',
-      type: 'String',
+    new ssm.CfnParameter(this, 'SsmGremlinEndpointDev', {
       name: '/trees/api/GREMLIN_ENDPOINT_DEV',
-    });
-    ssmGremlinEndpointDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
-
-    const ssmGremlinEndpointProd = new ssm.CfnParameter(this, 'SsmGremlinEndpointProd', {
-      value: neptuneClusterProd.attrEndpoint,
-      dataType: 'text',
       type: 'String',
-      name: '/trees/api/GREMLIN_ENDPOINT_PROD',
+      dataType: 'text',
+      value: this.clusterDev.attrEndpoint,
     });
-    ssmGremlinEndpointProd.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
+    new ssm.CfnParameter(this, 'SsmGremlinEndpointProd', {
+      name: '/trees/api/GREMLIN_ENDPOINT_PROD',
+      type: 'String',
+      dataType: 'text',
+      value: this.clusterProd.attrEndpoint,
+    });
   }
 }
