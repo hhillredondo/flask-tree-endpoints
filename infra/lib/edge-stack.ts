@@ -33,7 +33,62 @@ export class TreesEdgeStack extends cdk.Stack {
     });
     this.certApiDev.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
 
-    this.webAcl = new wafv2.CfnWebACL(this, 'CloudFrontWebAcl', {
+    const cfWafRules: wafv2.CfnWebACL.RuleProperty[] = [
+      {
+        name: 'AWS-AWSManagedRulesAmazonIpReputationList',
+        priority: 0,
+        statement: {
+          managedRuleGroupStatement: {
+            vendorName: 'AWS',
+            name: 'AWSManagedRulesAmazonIpReputationList',
+          },
+        },
+        overrideAction: { none: {} },
+        visibilityConfig: {
+          sampledRequestsEnabled: true,
+          cloudWatchMetricsEnabled: true,
+          metricName: 'AWS-AWSManagedRulesAmazonIpReputationList',
+        },
+      },
+      {
+        name: 'AWS-AWSManagedRulesCommonRuleSet',
+        priority: 1,
+        statement: {
+          managedRuleGroupStatement: {
+            vendorName: 'AWS',
+            name: 'AWSManagedRulesCommonRuleSet',
+            ruleActionOverrides: [
+              { name: 'SizeRestrictions_BODY', actionToUse: { count: {} } },
+              { name: 'CrossSiteScripting_BODY', actionToUse: { count: {} } },
+            ],
+          },
+        },
+        overrideAction: { none: {} },
+        visibilityConfig: {
+          sampledRequestsEnabled: true,
+          cloudWatchMetricsEnabled: true,
+          metricName: 'AWS-AWSManagedRulesCommonRuleSet',
+        },
+      },
+      {
+        name: 'AWS-AWSManagedRulesKnownBadInputsRuleSet',
+        priority: 2,
+        statement: {
+          managedRuleGroupStatement: {
+            vendorName: 'AWS',
+            name: 'AWSManagedRulesKnownBadInputsRuleSet',
+          },
+        },
+        overrideAction: { none: {} },
+        visibilityConfig: {
+          sampledRequestsEnabled: true,
+          cloudWatchMetricsEnabled: true,
+          metricName: 'AWS-AWSManagedRulesKnownBadInputsRuleSet',
+        },
+      },
+    ];
+
+    const legacyWebAcl = new wafv2.CfnWebACL(this, 'CloudFrontWebAcl', {
       name: 'CreatedByCloudFront-0ac1ed8d',
       defaultAction: { allow: {} },
       scope: 'CLOUDFRONT',
@@ -42,61 +97,20 @@ export class TreesEdgeStack extends cdk.Stack {
         cloudWatchMetricsEnabled: true,
         metricName: 'CreatedByCloudFront-0ac1ed8d',
       },
-      rules: [
-        {
-          name: 'AWS-AWSManagedRulesAmazonIpReputationList',
-          priority: 0,
-          statement: {
-            managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesAmazonIpReputationList',
-            },
-          },
-          overrideAction: { none: {} },
-          visibilityConfig: {
-            sampledRequestsEnabled: true,
-            cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesAmazonIpReputationList',
-          },
-        },
-        {
-          name: 'AWS-AWSManagedRulesCommonRuleSet',
-          priority: 1,
-          statement: {
-            managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesCommonRuleSet',
-              ruleActionOverrides: [
-                { name: 'SizeRestrictions_BODY', actionToUse: { count: {} } },
-                { name: 'CrossSiteScripting_BODY', actionToUse: { count: {} } },
-              ],
-            },
-          },
-          overrideAction: { none: {} },
-          visibilityConfig: {
-            sampledRequestsEnabled: true,
-            cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesCommonRuleSet',
-          },
-        },
-        {
-          name: 'AWS-AWSManagedRulesKnownBadInputsRuleSet',
-          priority: 2,
-          statement: {
-            managedRuleGroupStatement: {
-              vendorName: 'AWS',
-              name: 'AWSManagedRulesKnownBadInputsRuleSet',
-            },
-          },
-          overrideAction: { none: {} },
-          visibilityConfig: {
-            sampledRequestsEnabled: true,
-            cloudWatchMetricsEnabled: true,
-            metricName: 'AWS-AWSManagedRulesKnownBadInputsRuleSet',
-          },
-        },
-      ],
+      rules: cfWafRules,
     });
-    this.webAcl.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+    legacyWebAcl.cfnOptions.deletionPolicy = cdk.CfnDeletionPolicy.RETAIN;
+
+    this.webAcl = new wafv2.CfnWebACL(this, 'CloudFrontWebAclV2', {
+      name: 'trees-cf-webacl',
+      defaultAction: { allow: {} },
+      scope: 'CLOUDFRONT',
+      visibilityConfig: {
+        sampledRequestsEnabled: true,
+        cloudWatchMetricsEnabled: true,
+        metricName: 'trees-cf-webacl',
+      },
+      rules: cfWafRules,
+    });
   }
 }
