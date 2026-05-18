@@ -9,6 +9,14 @@ import { TreesEdgeStack } from "../lib/edge-stack";
 
 const app = new cdk.App();
 
+cdk.Tags.of(app).add("Project", "flask-tree-endpoints", {
+  excludeResourceTypes: [
+    "AWS::CertificateManager::Certificate",
+    "AWS::WAFv2::WebACL",
+    "AWS::ApiGatewayV2::Stage",
+  ],
+});
+
 const account = "AWS_ACCOUNT_ID";
 const env = { account, region: "eu-central-1" };
 const usEast1Env = { account, region: "us-east-1" };
