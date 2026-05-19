@@ -58,4 +58,7 @@ new TreesSchedulerStack(app, "TreesSchedulerStack", {
   clusterProd: compute.clusterProd,
   serviceProd: compute.serviceProd,
   neptuneClusterProd: data.clusterProd,
+  clusterDev: compute.clusterDev,
+  serviceDev: compute.serviceDev,
+  neptuneClusterDev: data.clusterDev,
 });
