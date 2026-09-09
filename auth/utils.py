@@ -120,13 +120,6 @@ def get_current_user_id() -> Optional[str]:
     return None
 
 
-def get_current_user_email() -> Optional[str]:
-    """Get current user email from Flask g context"""
-    if hasattr(g, "current_user"):
-        return g.current_user.get("email")
-    return None
-
-
 def get_current_user_info() -> Optional[Dict[str, Any]]:
     """Get current user info from Flask g context"""
     if hasattr(g, "current_user"):

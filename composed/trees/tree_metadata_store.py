@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import boto3
 from botocore.exceptions import ClientError
@@ -41,15 +41,6 @@ class TreeMetadataStore:
         if self._table is None:
             self._table = self._dynamo.Table(self._table_name)
         return self._table
-
-    def get_tree(self, tree_id: str) -> Optional[Dict]:
-        """Fetch a single tree record by id."""
-        try:
-            response = self.table.get_item(Key={"id": tree_id})
-            return response.get("Item")
-        except ClientError as exc:
-            current_app.logger.error(f"TreeMetadata get_tree failed: {exc}")
-            return None
 
     def batch_get_trees(self, tree_ids: List[str]) -> Dict[str, Dict]:
         """

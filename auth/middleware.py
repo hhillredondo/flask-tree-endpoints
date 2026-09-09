@@ -75,47 +75,5 @@ def require_auth(f):
     return decorated_function
 
 
-def optional_auth(f):
-    """Decorator for optional authentication - sets user context if token is valid"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Try to authenticate, but don't fail if no token
-        token = extract_token_from_request()
-        
-        if token:
-            is_authenticated, result = authenticate_request()
-            if not is_authenticated:
-                # Clear any invalid user context
-                if hasattr(g, 'current_user'):
-                    delattr(g, 'current_user')
-        
-        # Call the original function
-        return f(*args, **kwargs)
-    
-    return decorated_function
 
 
-def require_email_verified(f):
-    """Decorator to require email verification"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # First require authentication
-        is_authenticated, result = authenticate_request()
-        
-        if not is_authenticated:
-            return jsonify({
-                'error': 'Authentication required',
-                'message': result
-            }), 401
-        
-        # Check if email is verified
-        if not g.current_user.get('email_verified', False):
-            return jsonify({
-                'error': 'Email verification required',
-                'message': 'Please verify your email address before accessing this resource'
-            }), 403
-        
-        # Call the original function
-        return f(*args, **kwargs)
-    
-    return decorated_function
