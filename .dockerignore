@@ -1,0 +1,28 @@
+# Never bake local environment files into the image. Without this, `COPY . .`
+# shipped .env (with FLASK_DEBUG=True and a secret key) into every build.
+.env
+.env.*
+!.env.example
+
+.git
+.github
+.gitignore
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+infra/
+docs/
+tests/
+test_*.py
+
+.vscode/
+.idea/
+.DS_Store
+README.md

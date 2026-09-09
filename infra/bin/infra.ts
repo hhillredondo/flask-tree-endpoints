@@ -17,7 +17,15 @@ cdk.Tags.of(app).add("Project", "flask-tree-endpoints", {
   ],
 });
 
-const account = "AWS_ACCOUNT_ID";
+// Account is supplied by the environment, not hardcoded: an account id in a public
+// repo is free reconnaissance, and a literal here silently targets the wrong
+// account for anyone else deploying this stack.
+const account = process.env.CDK_DEFAULT_ACCOUNT ?? process.env.AWS_ACCOUNT_ID;
+if (!account) {
+  throw new Error(
+    "Set CDK_DEFAULT_ACCOUNT (or AWS_ACCOUNT_ID) before synthesising this app."
+  );
+}
 const env = { account, region: "eu-central-1" };
 const usEast1Env = { account, region: "us-east-1" };
 

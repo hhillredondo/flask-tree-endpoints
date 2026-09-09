@@ -1,108 +1,111 @@
 import os
 from typing import Any, Dict, Optional
 
-import requests
+import jwt
 from flask import current_app, g
-from jose import JWTError, jwt
+from jwt import PyJWKClient
+
+# Cognito id tokens are what the browser sends (see trees-amplify flaskService).
+# Access tokens are signed by the same keys with the same issuer, so `token_use`
+# must be checked explicitly or one is accepted in place of the other.
+_EXPECTED_TOKEN_USE = "id"
+
+# PyJWKClient caches keys and refetches when it sees an unknown `kid`, which is
+# what makes Cognito key rotation a non-event. The previous implementation cached
+# the JWKS for the process lifetime, so rotation broke auth until a redeploy and a
+# revoked key stayed trusted by long-lived tasks.
+_JWKS_CACHE_KEYS = 16
+_JWKS_LIFESPAN_SECONDS = 3600
 
 
 class AmplifyAuthUtils:
-    """Utilities for Amplify JWT token validation and user extraction"""
-    
+    """Validates Cognito JWTs and extracts the user identity from them."""
+
     def __init__(self):
-        self.user_pool_id = os.getenv('AMPLIFY_USER_POOL_ID')
-        self.region = os.getenv('AWS_REGION', 'eu-central-1')
-        self.jwks_url = f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}/.well-known/jwks.json"
-        self._jwks = None
-    
-    def get_jwks(self) -> Dict[str, Any]:
-        """Get JSON Web Key Set from Cognito"""
-        if self._jwks is None:
-            try:
-                response = requests.get(self.jwks_url, timeout=10)
-                response.raise_for_status()
-                self._jwks = response.json()
-            except requests.RequestException as e:
-                current_app.logger.error(f"Failed to fetch JWKS: {e}")
-                raise Exception("Failed to fetch JWKS")
-        return self._jwks
-    
-    def get_key_from_jwks(self, kid: str) -> Optional[Dict[str, Any]]:
-        """Get the appropriate key from JWKS based on key ID"""
-        jwks = self.get_jwks()
-        for key in jwks.get('keys', []):
-            if key.get('kid') == kid:
-                return key
-        return None
-    
+        self.user_pool_id = os.getenv("AMPLIFY_USER_POOL_ID")
+        self.client_id = os.getenv("AMPLIFY_USER_POOL_CLIENT_ID")
+        self.region = os.getenv("AWS_REGION", "eu-central-1")
+        self.issuer = (
+            f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}"
+        )
+        self._jwk_client: Optional[PyJWKClient] = None
+
+    def _get_jwk_client(self) -> PyJWKClient:
+        if self._jwk_client is None:
+            self._jwk_client = PyJWKClient(
+                f"{self.issuer}/.well-known/jwks.json",
+                cache_keys=True,
+                max_cached_keys=_JWKS_CACHE_KEYS,
+                lifespan=_JWKS_LIFESPAN_SECONDS,
+            )
+        return self._jwk_client
+
     def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Validate Amplify JWT token and return payload"""
+        """Return the token's claims, or None if it fails any check.
+
+        Verifies the RS256 signature against the pool's JWKS plus issuer, expiry,
+        audience (app client) and `token_use`. Returns None rather than raising so
+        callers cannot accidentally treat a failure as success.
+        """
+        if not self.user_pool_id:
+            current_app.logger.error("AMPLIFY_USER_POOL_ID is not configured")
+            return None
+
         try:
-            # Log token preview for debugging
-            token_preview = token[:20] + "..." if len(token) > 20 else token
-            current_app.logger.debug(f"Validating token: {token_preview}")
-            
-            # Decode token header to get key ID
-            try:
-                header = jwt.get_unverified_header(token)
-            except Exception as e:
-                current_app.logger.error(f"Error decoding token headers: {e}")
-                current_app.logger.error(f"Token length: {len(token)}, starts with: {token[:20]}")
-                return None
-            
-            kid = header.get('kid')
-            
-            if not kid:
-                current_app.logger.error(f"No key ID in token header. Header: {header}")
-                return None
-            
-            current_app.logger.debug(f"Token key ID: {kid}")
-            
-            # Get the appropriate key from JWKS
-            key = self.get_key_from_jwks(kid)
-            if not key:
-                current_app.logger.error(f"Key {kid} not found in JWKS")
-                return None
-            
-            # Validate and decode token
+            signing_key = self._get_jwk_client().get_signing_key_from_jwt(token)
+
+            # `aud` is only enforced when the client id is configured; a missing
+            # client id is logged loudly rather than silently skipping the check.
+            if not self.client_id:
+                current_app.logger.warning(
+                    "AMPLIFY_USER_POOL_CLIENT_ID is not set; skipping audience check"
+                )
+
             payload = jwt.decode(
                 token,
-                key,
-                algorithms=['RS256'],
-                audience=None,  # Cognito doesn't use audience
-                issuer=f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}",
+                signing_key.key,
+                algorithms=["RS256"],
+                issuer=self.issuer,
+                audience=self.client_id if self.client_id else None,
                 options={
-                    'verify_signature': True,
-                    'verify_exp': True,
-                    'verify_iat': True,
-                    'verify_iss': True,
-                    'verify_aud': False,
-                }
+                    "require": ["exp", "iat", "iss", "sub"],
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_iat": True,
+                    "verify_iss": True,
+                    "verify_aud": bool(self.client_id),
+                },
             )
-            
-            current_app.logger.debug(f"Token validated successfully for user: {payload.get('sub')}")
-            return payload
-            
-        except JWTError as e:
-            current_app.logger.error(f"JWT validation error: {e}")
-            current_app.logger.error(f"Token type: {type(token)}, length: {len(token)}")
+        except jwt.PyJWTError as exc:
+            current_app.logger.warning("JWT validation failed: %s", exc)
             return None
-        except Exception as e:
-            current_app.logger.error(f"Token validation error: {e}")
-            current_app.logger.error(f"Token type: {type(token)}, length: {len(token)}")
+        except Exception as exc:  # JWKS fetch failures, malformed input
+            current_app.logger.error("JWT validation error: %s", exc)
             return None
-    
+
+        token_use = payload.get("token_use")
+        if token_use != _EXPECTED_TOKEN_USE:
+            current_app.logger.warning(
+                "Rejected token with token_use=%r (expected %r)",
+                token_use,
+                _EXPECTED_TOKEN_USE,
+            )
+            return None
+
+        return payload
+
     def extract_user_info(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Extract user information from JWT payload"""
         return {
-            'user_id': payload.get('sub'),
-            'email': payload.get('email'),
-            'username': payload.get('cognito:username'),
-            'email_verified': payload.get('email_verified', False),
-            'token_use': payload.get('token_use'),
-            'auth_time': payload.get('auth_time'),
-            'exp': payload.get('exp'),
-            'iat': payload.get('iat'),
+            "user_id": payload.get("sub"),
+            "email": payload.get("email"),
+            "username": payload.get("cognito:username"),
+            "email_verified": payload.get("email_verified", False),
+            "groups": payload.get("cognito:groups", []),
+            "token_use": payload.get("token_use"),
+            "auth_time": payload.get("auth_time"),
+            "exp": payload.get("exp"),
+            "iat": payload.get("iat"),
         }
 
 
@@ -112,20 +115,20 @@ auth_utils = AmplifyAuthUtils()
 
 def get_current_user_id() -> Optional[str]:
     """Get current user ID from Flask g context"""
-    if hasattr(g, 'current_user'):
-        return g.current_user.get('user_id')
+    if hasattr(g, "current_user"):
+        return g.current_user.get("user_id")
     return None
 
 
 def get_current_user_email() -> Optional[str]:
     """Get current user email from Flask g context"""
-    if hasattr(g, 'current_user'):
-        return g.current_user.get('email')
+    if hasattr(g, "current_user"):
+        return g.current_user.get("email")
     return None
 
 
 def get_current_user_info() -> Optional[Dict[str, Any]]:
     """Get current user info from Flask g context"""
-    if hasattr(g, 'current_user'):
+    if hasattr(g, "current_user"):
         return g.current_user
     return None

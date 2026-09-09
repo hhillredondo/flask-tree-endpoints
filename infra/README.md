@@ -2,7 +2,7 @@
 
 CDK app that imports the AWS resources backing `https://api.trees-lab.com/`. Generated via the CloudFormation IaC Generator → `cdk migrate` workflow on 2026-05-10.
 
-Region `eu-central-1`, account `AWS_ACCOUNT_ID`.
+Region `eu-central-1`. The account comes from `CDK_DEFAULT_ACCOUNT`.
 
 ## Stacks
 

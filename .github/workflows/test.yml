@@ -6,6 +6,11 @@ on:
   push:
     branches: [main, master]
 
+# Least privilege: these workflows only read the repo. Public repos default
+# to a broader GITHUB_TOKEN, so state it explicitly.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

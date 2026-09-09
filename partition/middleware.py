@@ -47,15 +47,19 @@ def extract_partition_from_request() -> str:
     return partition_key
 
 
-def validate_partition_access(partition_key: str, user_id: str) -> bool:
-    """Validate that a user has access to a specific partition"""
+def is_well_formed_partition_key(partition_key: str) -> bool:
+    """Check that a partition key is structurally valid.
+
+    Renamed from `validate_partition_access`, which took a `user_id` it never
+    used: the name promised an authorization decision that this function does not
+    make. Authorization lives in `@require_role`, which looks the caller up in the
+    TreeAcl table by tree_id. `@require_partition` on its own grants nothing, so
+    it must always be paired with `@require_role`.
+    """
     if not partition_key:
         return False
-    
-    if not partition_manager.validate_partition_key(partition_key):
-        return False
-    
-    return True
+
+    return partition_manager.validate_partition_key(partition_key)
 
 
 def require_partition(f):
@@ -85,12 +89,12 @@ def require_partition(f):
                 'message': 'partition_key is required (X-Partition-Key header)'
             }), 400
         
-        # Validate partition access
-        if not validate_partition_access(partition_key, user_id):
+        # Structural check only. The ACL check happens in @require_role.
+        if not is_well_formed_partition_key(partition_key):
             return jsonify({
-                'error': 'Access denied',
-                'message': 'You do not have access to this partition'
-            }), 403
+                'error': 'Invalid partition key',
+                'message': 'Partition key format is invalid'
+            }), 400
         
         # Parse partition key to get tree_id
         _, tree_id = partition_manager.parse_partition_key(partition_key)

@@ -15,6 +15,9 @@ class Config:
     
     # Amplify/Cognito settings
     AMPLIFY_USER_POOL_ID = os.getenv('AMPLIFY_USER_POOL_ID')
+    # Required to validate the `aud` claim: without it any app client in the
+    # pool is accepted. Leave unset only for local work against a test pool.
+    AMPLIFY_USER_POOL_CLIENT_ID = os.getenv('AMPLIFY_USER_POOL_CLIENT_ID')
     AWS_REGION = os.getenv('AWS_REGION', 'eu-central-1')
 
     # ACL/DynamoDB settings
@@ -47,7 +50,10 @@ class Config:
     # User limits
     MAX_TREES_PER_USER = 5
     MAX_STORAGE_PER_TREE_BYTES = 1024 * 1024 * 1024  # 1GB
-    ENFORCE_LIMITS = os.getenv('ENFORCE_LIMITS', 'false').lower() == 'true'
+    # Ceiling on a single request body (Flask MAX_CONTENT_LENGTH). Media routes
+    # buffer uploads in memory, so this bounds peak memory per request.
+    MAX_UPLOAD_BYTES = int(os.getenv('MAX_UPLOAD_BYTES', str(32 * 1024 * 1024)))
+    ENFORCE_LIMITS = os.getenv('ENFORCE_LIMITS', 'true').lower() == 'true'
 
 
 class DevelopmentConfig(Config):

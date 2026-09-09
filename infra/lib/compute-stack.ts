@@ -93,7 +93,16 @@ export class TreesComputeStack extends cdk.Stack {
                 `arn:aws:ssm:${this.region}:${this.account}:parameter/amplify/d32mgf3rp8n1oh/master/*`,
               ],
             },
-            { Effect: 'Allow', Action: 'kms:Decrypt', Resource: '*' },
+            {
+              // Needed to decrypt SecureString parameters. Constrained so the role
+              // cannot decrypt arbitrary ciphertext elsewhere in the account.
+              Effect: 'Allow',
+              Action: 'kms:Decrypt',
+              Resource: '*',
+              Condition: {
+                StringEquals: { 'kms:ViaService': `ssm.${this.region}.amazonaws.com` },
+              },
+            },
           ],
         },
       }],
@@ -252,6 +261,9 @@ export class TreesComputeStack extends cdk.Stack {
       retentionInDays: 14,
     });
 
+    // NOTE: everything here lands in the task definition in plaintext, readable by
+    // anyone with ecs:DescribeTaskDefinition. Secrets belong in the `secrets:`
+    // block below, which resolves from SSM/Secrets Manager at task start.
     const sharedContainerEnv = (env: 'development' | 'production') => [
       { name: 'AWS_REGION', value: this.region },
       { name: 'FLASK_ENV', value: env },
@@ -298,6 +310,8 @@ export class TreesComputeStack extends cdk.Stack {
         secrets: [
           { name: 'ACL_TABLE_NAME', valueFrom: '/amplify/sandbox/sandbox/TreeAclTableName' },
           { name: 'AMPLIFY_USER_POOL_ID', valueFrom: '/amplify/sandbox/sandbox/UserPoolId' },
+          { name: 'AMPLIFY_USER_POOL_CLIENT_ID', valueFrom: '/amplify/sandbox/sandbox/UserPoolClientId' },
+          { name: 'FLASK_SECRET_KEY', valueFrom: '/trees/api/FLASK_SECRET_KEY_DEV' },
           { name: 'GREMLIN_ENDPOINT', valueFrom: '/trees/api/GREMLIN_ENDPOINT_DEV' },
           { name: 'LOCK_TABLE_NAME', valueFrom: '/amplify/sandbox/sandbox/TreeEditorLocksTableName' },
           { name: 'S3_MEDIA_BUCKET', valueFrom: '/amplify/sandbox/sandbox/MediaBucketName' },
@@ -335,6 +349,8 @@ export class TreesComputeStack extends cdk.Stack {
         secrets: [
           { name: 'ACL_TABLE_NAME', valueFrom: '/amplify/d32mgf3rp8n1oh/master/TreeAclTableName' },
           { name: 'AMPLIFY_USER_POOL_ID', valueFrom: '/amplify/d32mgf3rp8n1oh/master/UserPoolId' },
+          { name: 'AMPLIFY_USER_POOL_CLIENT_ID', valueFrom: '/amplify/d32mgf3rp8n1oh/master/UserPoolClientId' },
+          { name: 'FLASK_SECRET_KEY', valueFrom: '/trees/api/FLASK_SECRET_KEY_PROD' },
           { name: 'GREMLIN_ENDPOINT', valueFrom: '/trees/api/GREMLIN_ENDPOINT_PROD' },
           { name: 'LOCK_TABLE_NAME', valueFrom: '/amplify/d32mgf3rp8n1oh/master/TreeEditorLocksTableName' },
           { name: 'S3_MEDIA_BUCKET', valueFrom: '/amplify/d32mgf3rp8n1oh/master/MediaBucketName' },

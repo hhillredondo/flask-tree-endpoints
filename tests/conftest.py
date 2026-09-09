@@ -87,7 +87,7 @@ def partition_headers(auth_headers):
 @pytest.fixture()
 def mock_partition():
     """Patch partition validation so any well-formed key is accepted."""
-    with patch("partition.middleware.validate_partition_access", return_value=True), \
+    with patch("partition.middleware.is_well_formed_partition_key", return_value=True), \
          patch("partition.manager.partition_manager.validate_partition_key", return_value=True), \
          patch("partition.manager.partition_manager.parse_partition_key", return_value=(FAKE_USER_ID, FAKE_TREE_ID)):
         yield
