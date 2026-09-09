@@ -24,9 +24,13 @@ def get_user_sub_by_email(email: str) -> Optional[str]:
         return None
 
     try:
+        # Cognito's filter grammar is quote-delimited, so an address containing a
+        # double quote would break out of the literal. Escape it rather than
+        # interpolating attacker-supplied text directly.
+        escaped_email = email.replace('\\', '\\\\').replace('"', '\\"')
         response = _get_client().list_users(
             UserPoolId=os.getenv("AMPLIFY_USER_POOL_ID"),
-            Filter=f'email = "{email}"',
+            Filter=f'email = "{escaped_email}"',
             Limit=1
         )
         users = response.get("Users", [])

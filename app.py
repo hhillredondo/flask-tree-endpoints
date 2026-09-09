@@ -1,5 +1,4 @@
 import logging
-import os
 
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
@@ -54,6 +53,10 @@ app = Flask(__name__)
 # Load configuration
 app.config.from_object(get_config())
 
+# Cap request bodies. The media routes read uploads fully into memory, so without
+# this an authenticated editor can push an arbitrarily large body at the task.
+app.config["MAX_CONTENT_LENGTH"] = app.config["MAX_UPLOAD_BYTES"]
+
 # Configure CORS
 CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
 
@@ -63,52 +66,18 @@ g = create_gremlin_connection()
 
 @app.route("/", methods=["GET"])
 def health_check():
-    """Health check endpoint - no authentication required"""
+    """Health check endpoint - no authentication required.
+
+    Deliberately terse: this route is public, so failures are logged server-side
+    rather than returned. Echoing the exception and the Gremlin/Neptune endpoint
+    handed the cluster address to any anonymous caller.
+    """
     try:
-        # Test Gremlin connection
         g.V().limit(1).toList()
-        return jsonify({
-            "status": "healthy",
-            "message": "Flask API is running",
-            "gremlin_connection": "connected"
-        }), 200
-    except Exception as e:
-        logger.exception("Health check failed")
-        debug_info = {
-            "gremlin_endpoint": os.getenv("GREMLIN_ENDPOINT"),
-            "gremlin_port": os.getenv("GREMLIN_PORT"),
-            "gremlin_ssl": os.getenv("GREMLIN_SSL"),
-            "gremlin_iam_auth": os.getenv("GREMLIN_IAM_AUTH"),
-            "aws_region": os.getenv("AWS_REGION"),
-            "aws_default_region": os.getenv("AWS_DEFAULT_REGION"),
-        }
-        return jsonify({
-            "status": "unhealthy",
-            "message": "Flask API is running but Gremlin connection failed",
-            "error": str(e),
-            "error_type": type(e).__name__,
-            "debug": debug_info
-        }), 500
-
-
-@app.route("/auth/debug", methods=["GET"])
-def debug_auth():
-    """Debug authentication - shows what token we received"""
-    try:
-        auth_header = request.headers.get('Authorization')
-        
-        debug_info = {
-            "auth_header_present": auth_header is not None,
-            "auth_header_length": len(auth_header) if auth_header else 0,
-            "auth_header_preview": auth_header[:50] + "..." if auth_header and len(auth_header) > 50 else auth_header,
-            "starts_with_bearer": auth_header.startswith('Bearer ') if auth_header else False,
-            "all_headers": dict(request.headers)
-        }
-        
-        return jsonify(debug_info), 200
-    except Exception as e:
-        logger.error(f"Error in debug endpoint: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"status": "healthy"}), 200
+    except Exception:
+        logger.exception("Health check failed: Gremlin connection error")
+        return jsonify({"status": "unhealthy"}), 503
 
 
 @app.route("/auth/me", methods=["GET"])

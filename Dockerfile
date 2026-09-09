@@ -21,4 +21,9 @@ USER appuser
 EXPOSE 5000
 
 # Health check for ECS/Fargate
-HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/health || exit 1
+# The health endpoint is "/", not "/health": the previous path 404'd, so this
+# check could only ever report the container unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s CMD curl -f http://localhost:5000/ || exit 1
+
+# Matches the command in the ECS task definition; makes `docker run` work directly.
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
