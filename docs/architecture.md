@@ -14,7 +14,7 @@ inside AWS.
 ```mermaid
 flowchart LR
     Browser["Browser\n(HTTPS)"]
-    Amplify["Amplify Hosting\nhttps://master.d32mgf3rp8n1oh.amplifyapp.com"]
+    Amplify["Amplify Hosting\nhttps://master.<app-id>.amplifyapp.com"]
     CF["CloudFront\nhttps://dxxxx.cloudfront.net"]
     ALB["ALB\nhttp://trees-api-alb-xxx.eu-central-1.elb.amazonaws.com"]
     ECS["ECS Fargate\nFlask API (port 5000)\nPrivate subnet"]
@@ -42,7 +42,7 @@ flowchart LR
 
 **Key points:**
 - ECS tasks run in **private subnets**; only the ALB can reach them (security group allows port 5000 from the ALB's security group only).
-- CloudFront provides the HTTPS endpoint; CORS_ORIGINS on the ECS task must include the Amplify frontend origin (e.g. `https://master.d32mgf3rp8n1oh.amplifyapp.com`).
+- CloudFront provides the HTTPS endpoint; CORS_ORIGINS on the ECS task must include the Amplify frontend origin (e.g. `https://master.<app-id>.amplifyapp.com`).
 
 ---
 
@@ -80,7 +80,7 @@ flowchart LR
 **Key points:**
 - The dev ECS task runs in a **public subnet** with **Assign public IP = ON** and no ALB.
 - The task's security group allows inbound TCP 5000 from `0.0.0.0/0` (no ALB SG rule needed).
-- The task's public IP is **ephemeral** — it changes when the task is replaced. Update `VITE_FLASK_API_URL` in `.env.local` after each task replacement.
+- The task's public IP is **ephemeral** - it changes when the task is replaced. Update `VITE_FLASK_API_URL` in `.env.local` after each task replacement.
 - `VITE_FLASK_API_URL=http://<task-public-ip>:5000` in `.env.local` (not committed).
 - CORS_ORIGINS on the dev ECS task must include the sandbox origin (e.g. `http://localhost:5173`).
 

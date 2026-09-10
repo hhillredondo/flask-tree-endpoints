@@ -1,7 +1,8 @@
 ## Smoke Tests (Manual)
 
 ### Health
-- `GET /` returns `"status": "healthy"` and `gremlin_connection: "connected"`.
+- `GET /` returns `{"status": "healthy"}` when Gremlin is reachable, and
+  `{"status": "unhealthy"}` with a 503 when it is not. Nothing else is in the body.
 
 ### Auth
 - `GET /auth/me` without token → `401`.
@@ -22,7 +23,11 @@
 - `POST /editor-lock/force` by owner → lock released.
 
 ### Member CRUD
-- `POST /member` as editor with lock → `201`.
+
+Members are created through `POST /trees` (the first member) and the relation
+endpoints below; there is no `POST /member`.
+
+- `PUT /member` as editor with lock → `200`.
 - `GET /member` and `GET /members` as viewer → `200`.
 - `DELETE /member` as viewer → `403`.
 - `DELETE /member` as editor with lock → `200`.

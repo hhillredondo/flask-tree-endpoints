@@ -29,3 +29,11 @@ infra/migrate/
 .vscode/
 .idea/
 .DS_Store
+
+# AI assistant context and tooling, kept local
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.cursorrules
+.aider*

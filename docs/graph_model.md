@@ -2,7 +2,7 @@
 
 ## Overview
 
-Amazon Neptune is a schema-free graph database — there is no way to enforce a
+Amazon Neptune is a schema-free graph database - there is no way to enforce a
 schema at the database level. The "schema" described here is the implicit
 contract enforced by the Flask API's validation layer.
 

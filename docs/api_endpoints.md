@@ -6,9 +6,10 @@
 
 ### Health / Auth
 - `GET /`  
-  Health check (no auth). Verifies Gremlin connectivity.
-- `GET /auth/debug`  
-  Debug auth header (no auth).
+  Health check (no auth). Verifies Gremlin connectivity and returns
+  `{"status": "healthy"}` or, on failure, `{"status": "unhealthy"}` with a 503.
+  Deliberately returns nothing else: it is public, so the underlying error is
+  logged rather than returned.
 - `GET /auth/me`  
   Returns current user info (auth required).
 - `DELETE /account`  
