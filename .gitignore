@@ -1,9 +1,7 @@
-# Environment / secrets - never commit these
 .env
 .env.*
 !.env.example
 
-# Python
 __pycache__/
 *.py[cod]
 .venv/
@@ -13,24 +11,16 @@ venv/
 .coverage
 htmlcov/
 
-# Node (infra/)
 node_modules/
 cdk.out/
 *.tsbuildinfo
 
-# CDK deploy outputs
 .cdk-outputs-*.json
 
-# cdk migrate artifacts: stale generated files containing the account id and a
-# full resource inventory. Obsolete after the first deploy.
-infra/migrate/
-
-# Editors / OS
 .vscode/
 .idea/
 .DS_Store
 
-# AI assistant context and tooling, kept local
 .claude/
 CLAUDE.md
 AGENTS.md
