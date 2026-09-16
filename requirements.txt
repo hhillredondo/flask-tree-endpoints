@@ -12,7 +12,7 @@ flask-cors==6.0.0
 PyJWT[crypto]==2.10.1
 
 requests==2.32.4
-gremlinpython==3.7.3
+gremlinpython==3.8.1
 python-dotenv==1.0.1
 gunicorn==23.0.0
 python-dateutil==2.9.0.post0
