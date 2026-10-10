@@ -9,8 +9,9 @@ load_dotenv()
 class Config:
     """Base configuration class"""
     
-    # Flask settings
-    SECRET_KEY = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+    # Flask settings. No SECRET_KEY on purpose: auth is Cognito JWTs and nothing is
+    # signed, so without one Flask refuses `session`/`flash` outright instead of
+    # signing them with a key that could leak.
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     # Amplify/Cognito settings

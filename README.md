@@ -37,15 +37,12 @@ The API comes up on http://localhost:5000, and `GET /` will tell you whether it
 can reach Gremlin.
 
 `.env.example` lists what you can set. The two worth knowing about are
-`FLASK_SECRET_KEY`, which you should generate rather than copy:
-
-```bash
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-and `AMPLIFY_USER_POOL_ID` with `AMPLIFY_USER_POOL_CLIENT_ID`. Those come from a
+`AMPLIFY_USER_POOL_ID` and `AMPLIFY_USER_POOL_CLIENT_ID`. Those come from a
 deployed Cognito pool, and without them any request carrying a token is rejected,
 so you will only be able to reach the health check.
+
+There is no `FLASK_SECRET_KEY`. Nothing in the app is signed, so Flask runs
+without one and refuses `session` and `flash` if code ever reaches for them.
 
 
 ## Tests

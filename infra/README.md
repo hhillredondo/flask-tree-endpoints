@@ -35,9 +35,14 @@ Deploy one stack at a time and check `cdk diff` in between. `TreesComputeStack`
 is the one to be careful with: it owns the ECS services and the Route 53 records,
 so a bad change there takes the API down.
 
-Secrets are not in this app. `FLASK_SECRET_KEY`, the Cognito app client id and
-the Gremlin endpoints all resolve from SSM through the task definition's
-`secrets:` block at task start, so rotating one does not need a redeploy.
+The Cognito ids, table and bucket names and the Gremlin endpoints are not in this
+app. They resolve from SSM through the task definition's `secrets:` block at task
+start, so changing one needs a new task, not a redeploy. Every parameter named
+there must exist, or the task fails to start.
+
+`deploy.yml` only pushes an image and forces a new deployment, which reuses the
+registered task definition. Changes to task definitions reach AWS only through
+`cdk deploy TreesComputeStack`.
 
 ## What is not in IaC, and why
 
